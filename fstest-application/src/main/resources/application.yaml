@@ -1,0 +1,98 @@
+
+t3hwdev:
+  database:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    default-schema: db
+    migration_path: filesystem:db/migration
+#     # batch-size: 1000
+  logging:
+    level: ${LOG_LEVEL:info}
+    global-level: ${LOG_LEVEL_GLOBAL:info}
+    enable-file-appender: false
+    log-directory: ${LOG_DIRECTORY:log}
+
+logging:
+  level:
+    '[org.jooq.Constants]': DEBUG
+    # '[org.hibernate]': DEBUG
+    # '[dev.t3hw.package.name]': DEBUG
+    # '[dev.t3hw.package.name.Class]': DEBUG
+
+server:
+  http2:
+    enabled: true
+  port: 4100
+  #   ssl:
+  #     # client-auth: need
+  #     enabled: false
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-exception: true
+
+springdoc:
+  packagesTo-scan:
+    - dev.t3hw.fstest.server
+  paths-to-match: /**
+  swagger-ui:
+    use-root-path: true
+    deepLinking: true
+    displayRequestDuration: true
+    filter: true
+    persistAuthorization: true
+    docExpansion: none
+
+spring:
+  application:
+    name: fstest
+  profiles:
+    active: ${ACTIVE_PROFILE:h2}
+    default: h2
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+  flyway:
+    # create-schemas: false
+    # locations: ${t3hwdev.database.migration_path}
+    # schemas: ${t3hwdev.database.default-schema}
+    # # baselineOnMigrate: true
+    # # baselineVersion: 0.3
+    # # baseline-description: Baseline for app migration
+    # validate-migration-naming: true
+    enabled: false
+  jooq:
+    sql-dialect: MYSQL
+  datasource:
+    # driver-class-name: com.mysql.jdbc.Driver
+    url: ${t3hwdev.database.url}
+    username: ${t3hwdev.database.username}
+    password: ${t3hwdev.database.password}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 30
+      max-lifetime: 600000 # 10 minutes 
+      idle-timeout: 180000 # 5 minutes  
+      connection-timeout: 30000 # 30 seconds
+  # jpa:
+  #   open-in-view: false
+#     # show-sql: true
+#     hibernate:
+#       naming:
+#         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+#     # defer-datasource-initialization: true
+#     defer-datasource-initialization: false
+#     properties:
+#       hibernate:
+#         jdbc:
+#           "[batch_size]": ${t3hwdev.database.batch-size}
+#         "[default_schema]": ${t3hwdev.database.default-schema}
+#         "[format_sql]": true
+#         "[enable_lazy_load_no_trans]": true
+#         "[order_inserts]": true
+#         "[order_updates]": true
+#         "[batch_versioned_data]": true

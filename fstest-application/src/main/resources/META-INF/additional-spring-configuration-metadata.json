@@ -1,0 +1,47 @@
+{"properties": [
+  {
+    "name": "t3hwdev.database.url",
+    "type": "java.lang.String",
+    "description": "A description for 't3hwdev.database.url'"
+  },
+  {
+    "name": "t3hwdev.database.username",
+    "type": "java.lang.String",
+    "description": "A description for 't3hwdev.database.username'"
+  },
+  {
+    "name": "t3hwdev.database.password",
+    "type": "java.lang.String",
+    "description": "A description for 't3hwdev.database.password'"
+  },
+  {
+    "name": "t3hwdev.database.default-schema",
+    "type": "java.lang.String",
+    "description": "A description for 't3hwdev.database.default-schema'"
+  },
+  {
+    "name": "t3hwdev.database.migration_path",
+    "type": "java.lang.String",
+    "description": "A description for 't3hwdev.database.migration_path'"
+  },
+  {
+    "name": "t3hwdev.logging.level",
+    "type": "java.lang.String",
+    "description": "A description for 't3hwdev.logging.level'"
+  },
+  {
+    "name": "t3hwdev.logging.global-level",
+    "type": "java.lang.String",
+    "description": "A description for 't3hwdev.logging.global-level'"
+  },
+  {
+    "name": "t3hwdev.logging.enable-file-appender",
+    "type": "java.lang.String",
+    "description": "A description for 't3hwdev.logging.enable-file-appender'"
+  },
+  {
+    "name": "t3hwdev.logging.log-directory",
+    "type": "java.lang.String",
+    "description": "A description for 't3hwdev.logging.log-directory'"
+  }
+]}

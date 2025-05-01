@@ -1,0 +1,1 @@
+docker buildx b -t ravidgontov/helidon-devcontainer:java21 --push .

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds" >
+    
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
+    <!-- <include resource="org/springframework/boot/logging/logback/base.xml"/> -->
+
+    <import class="ch.qos.logback.core.ConsoleAppender"/>
+
+    <springProperty name="application" source="t3hwdev.logging.logstash.index-name" defaultValue="unknown-application"/>
+    <springProperty name="level" source="t3hwdev.logging.level" defaultValue="info"/>
+    <springProperty name="global-level" source="t3hwdev.logging.global-level" defaultValue="warn"/>
+    <springProperty name="file-appender" source="t3hwdev.logging.enable-file-appender" defaultValue="false"/>
+    <springProperty name="log-directory" source="t3hwdev.logging.log-directory" defaultValue="log"/>
+
+    <appender name="ConsoleTextAppender" class="ConsoleAppender">
+        <encoder>
+            <!-- <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %5p - [%10.15t] %-20.40c{1} : %m %marker%n%rEx{50}</pattern> -->
+            <pattern>%yellow(%d{yyyy-MM-dd HH:mm:ss.SSS}) %highlight(%-5level) %gray([%20.40t]) %boldCyan([%20.40c{0}:%L]) : %white(%m) %marker%n%rEx{50}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- <appender name="NOOPAppender" class="ch.qos.logback.core.helpers.NOPAppender" /> -->
+
+    <logger name="dev.t3hw" additivity="false">
+        <level value="${level}" />
+        <appender-ref ref="ConsoleTextAppender" />
+    </logger>
+
+    <appender name="FileTextAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log-directory}/log.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log-directory}/log-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>10</maxHistory>
+            <maxFileSize>1MB</maxFileSize>
+        </rollingPolicy>
+        <encoder>
+            <!-- <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %5p - [%10.15t] %-20.40c{1} : %m %marker%n%rEx{50}</pattern> -->
+            <pattern>%yellow(%d{yyyy-MM-dd HH:mm:ss.SSS}) %highlight(%-5level) %gray([%20.40t]) %boldCyan([%20.40c{0}:%L]) : %m %marker%n%rEx{50}</pattern>
+        </encoder>
+    </appender>
+
+    <root level="${global-level}" additivity="false">
+        <appender-ref ref="ConsoleTextAppender" />
+        <if condition='property("file-appender").contains("true")'>
+            <then>
+                <appender-ref ref="FileTextAppender"/>
+            </then>
+        </if> 
+    </root>
+
+</configuration>

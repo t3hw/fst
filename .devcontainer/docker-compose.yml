@@ -1,0 +1,36 @@
+services:
+  devcontainer:
+    image: ravidgontov/devcontainer:java21
+    volumes:
+      # - /var/run/docker.sock:/var/run/docker.sock
+      # - /etc/hosts:/etc/hosts:ro
+      - ~/.ssh:/home/vscode/.ssh:cached
+      - ~/.m2:/home/vscode/.m2:cached
+      - ..:/workspaces:cached
+    command: sleep infinity
+    # env_file:
+    #     # Ensure that the variables in .env match the same variables in devcontainer.json
+    #     - .env
+    networks:
+      - devcontainer_net
+  devdb:
+    image: mysql:latest
+    restart: always
+    environment:
+      - 'MYSQL_DATABASE=db'
+      - 'MYSQL_USER=user'
+      - 'MYSQL_PASSWORD=password'
+      - 'MYSQL_ROOT_PASSWORD=verysecret'
+    volumes:
+      - devdb:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 40
+    networks:
+      - devcontainer_net
+
+volumes:
+  devdb:
+networks:
+  devcontainer_net:

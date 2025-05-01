@@ -1,0 +1,12 @@
+{
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.compile.nullAnalysis.mode": "disabled",
+    "java.test.config": {
+        "env": {
+            "ACTIVE_PROFILE": "test",
+            "DB_USERNAME": "sa",
+            "DB_PASSWORD": "",
+            "DB_URL": "jdbc:h2:mem:db;DB_CLOSE_ON_EXIT=TRUE;MODE=MYSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE",
+        }
+    }
+}
