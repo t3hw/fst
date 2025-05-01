@@ -12,7 +12,7 @@
   <artifactId>openapi-spec</artifactId>
 
   <properties>
-    <yaml-location-service>/src/main/resources/swagger/model.yaml</yaml-location-service>
+    <yaml-location-service>/src/main/resources/swagger/modelV1.yaml</yaml-location-service>
     <spring-boot.repackage.skip>true</spring-boot.repackage.skip>
   </properties>
 

@@ -1,18 +1,24 @@
 package dev.t3hw.fstest.exceptions;
 
-import java.time.OffsetDateTime;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.event.Level;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindException;
+import org.springframework.validation.method.MethodValidationResult;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-import org.springframework.web.util.ServletRequestPathUtils;
 
-import dev.t3hw.fstest.model.ErrorResponseDTO;
+import dev.t3hw.fstest.model.ProblemDetails;
 import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
@@ -20,41 +26,89 @@ import lombok.extern.slf4j.Slf4j;
 public class ResponseAdvice extends ResponseEntityExceptionHandler {
     
     @ExceptionHandler(CustomExceptions.ParsingException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponseDTO handleParsingException(CustomExceptions.ParsingException e, WebRequest request) {
-        return handleException(e, request, HttpStatus.BAD_REQUEST, Level.INFO);
+    public ResponseEntity<Object> handleParsingException(CustomExceptions.ParsingException e, WebRequest request, HttpHeaders headers) {
+        return getProblemDetailsAndLog(e, headers, HttpStatus.BAD_REQUEST, request, Level.INFO);
     }
 
     @ExceptionHandler(CustomExceptions.NotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponseDTO handleNotFoundException(CustomExceptions.NotFoundException e, WebRequest request) {
-        return handleException(e, request, HttpStatus.NOT_FOUND, Level.TRACE);
+    public ResponseEntity<Object> handleNotFoundException(CustomExceptions.NotFoundException e, WebRequest request, HttpHeaders headers) {
+        return getProblemDetailsAndLog(e, headers, HttpStatus.NOT_FOUND, request, Level.INFO);
     }
 
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<ErrorResponseDTO> handleUncaughtException(Exception e, WebRequest request) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(handleException(e, request, HttpStatus.INTERNAL_SERVER_ERROR, Level.ERROR));
+    public ResponseEntity<Object> handleUncaughtException(Exception e, WebRequest request, HttpHeaders headers) {
+        return getProblemDetailsAndLog(e, headers, HttpStatus.INTERNAL_SERVER_ERROR, request, Level.ERROR);
+    }
+    
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+        MethodArgumentNotValidException ex,
+        HttpHeaders headers,
+        HttpStatusCode status,
+        WebRequest request
+    ) {
+        return getProblemDetailsAndLog(ex, headers, status, request, Level.DEBUG);
     }
 
-    private ErrorResponseDTO handleException(Exception e, WebRequest request, HttpStatus status, Level logLevel) {
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+        HandlerMethodValidationException ex,
+        HttpHeaders headers,
+        HttpStatusCode status,
+        WebRequest request
+    ) {
+        return getProblemDetailsAndLog(ex, headers, status, request, Level.DEBUG);
+    }
+
+    private ResponseEntity<Object> getProblemDetailsAndLog(
+        Exception ex,
+        HttpHeaders headers,
+        HttpStatusCode status,
+        WebRequest request,
+        Level logLevel
+    ) {
+        Map<String, Object> properties = new HashMap<>();
+
         switch (logLevel) {
             case Level.ERROR:
-                log.error("Unexpected exception occured: {}", e.getMessage(), e);
+                log.error("Unexpected exception occured: {}", ex.getMessage(), ex);
+                properties = Map.of("exception", ex.getClass().getSimpleName());
                 break;
             default:
                 log.atLevel(logLevel)
-                   .log(e.getMessage());
+                   .log(ex.getMessage());
                 break;
         }
-        
-        return new ErrorResponseDTO()
-            .error(e.getMessage())
-            .path(request.getAttribute(ServletRequestPathUtils.PATH_ATTRIBUTE, 0).toString())
-            .timestamp(OffsetDateTime.now())
-            .status(status.value())
-            .error(status.getReasonPhrase())
-            .exception(e.getClass().getSimpleName());
+
+        if (ex instanceof MethodValidationResult validationError) {
+            properties.put("validationErrors", validationError.getAllErrors());
+        } else if (ex instanceof BindException bindException) {
+            properties.put("bindErrors", bindException.getAllErrors());
+        }
+
+        if (properties.size() == 0) {
+            properties = null;
+        }
+
+        final String title;
+        if (status instanceof HttpStatus st) {
+            title = st.getReasonPhrase();
+        } else {
+            title = status.toString();
+        }
+
+        ProblemDetails problemDetails = new ProblemDetails()
+                                                .title(title)
+                                                .status(status.value())
+                                                .detail(ex.getMessage())
+                                                .instance(URI.create(request.getDescription(false)))
+                                                .properties(properties);
+
+        problemDetails.setProperties(properties);
+
+        return ResponseEntity.status(problemDetails.getStatus())
+                             .headers(headers)
+                             .body(problemDetails);
     }
+
 }

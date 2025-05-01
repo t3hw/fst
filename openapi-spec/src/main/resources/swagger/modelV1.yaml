@@ -1,0 +1,407 @@
+openapi: 3.0.1
+info:
+  version: 1.0.0
+  title: FileSystem API
+  contact:
+    name: Ravid Gontov
+tags:
+  - name: fstest
+    description: Common Query/Delete endpoints
+  - name: dir
+    description: Directory endpoints
+  - name: file
+    description: File endpoints
+
+servers:
+  - url: '{protocol}://{host}:{port}/api/v1/fstest'
+    variables:
+      protocol:
+        default: http
+        enum:
+          - http
+          - https
+      host:
+        default: localhost
+      port:
+        default: '4100'
+paths:
+  /:
+    get:
+      tags:
+        - fstest
+      summary: Get File or Directory
+      description: Returns a list of all files and directories in the file system
+      operationId: getFileSystem
+      parameters:
+        - $ref: "#/components/parameters/path"
+        - $ref: "#/components/parameters/recursive"
+      responses:
+        "200":
+          description: A list of files and directories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetResponseDTO"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+    delete:
+      tags:
+        - fstest
+      summary: Delete File or Directory
+      description: Deletes a file or directory at the specified path
+      operationId: deleteFileSystem
+      parameters:
+        - $ref: "#/components/parameters/path"
+        - $ref: "#/components/parameters/recursive"
+      responses:
+        "200":
+          description: File or directory deleted successfully
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+
+  /dir:
+    post:
+      tags:
+        - dir
+      summary: Create Directory
+      description: Creates a new directory at the specified path
+      operationId: addDir
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDirectoryDTO"
+      responses:
+        "201":
+          description: Directory created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResponseDTO"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+  
+  /file:
+    post:
+      tags:
+        - file
+      summary: Create File
+      description: Creates a new file at the specified path
+      operationId: addFile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFileDTO"
+      responses:
+        "201":
+          description: File created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResponseDTO"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+
+  /file/size:
+    get:
+      tags:
+        - file
+      summary: Get File
+      description: Returns the file size at the specified path
+      operationId: getFileSize
+      parameters:
+        - $ref: "#/components/parameters/path"
+      responses:
+        "200":
+          description: File found
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+                description: The size of the file in bytes
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+
+  /file/biggest:
+    get:
+      tags:
+        - file
+      summary: Get Biggest File
+      description: Returns the biggest file in the file system
+      operationId: getBiggesttFile
+      responses:
+        "200":
+          description: Biggest file found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileDTO"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+
+components:
+  parameters:
+
+    path:
+      name: path
+      in: query
+      required: false
+      description: The path to the file or directory
+      schema:
+        $ref: "#/components/schemas/Path"
+    recursive:
+      name: recursive
+      in: query
+      required: false
+      description: Whether to include subdirectories
+      schema:
+        type: boolean
+        default: true
+    force:
+      name: force
+      in: query
+      required: false
+      description: Whether to force delete the file or directory
+      schema:
+        type: boolean
+        default: false
+
+  schemas:
+
+    Path:
+      type: string
+      pattern: ^(/[\w\-. ]{1,32})+$
+      description: |
+        Path to the directory - must contain only alphanumeric characters, hyphens, underscores, and spaces.
+        Each segment must be 1-32 characters long.
+      example: /home/user/documents
+    
+    Name:
+      type: string
+      pattern: ^[\w\-. ]{1,32}$
+      description: |
+        Name of the file or directory - must contain only alphanumeric characters, hyphens, underscores, and spaces.
+        Must be 1-32 characters long.
+    
+    CreatedAt:
+      type: string
+      format: date-time
+      description: The date and time when the file or directory was created
+      example: "2023-10-01T12:00:00Z"
+
+    CreateDirectoryDTO:
+      required:
+        - path
+        - name
+      properties:
+        path:
+          $ref: "#/components/schemas/Path"
+        name:
+          $ref: "#/components/schemas/Name"
+
+    CreateFileDTO:
+      required:
+        - path
+        - name
+        - size
+      properties:
+        path:
+          $ref: "#/components/schemas/Path"
+        name:
+          $ref: "#/components/schemas/Name"
+        size:
+          type: integer
+          format: int32
+          description: The size of the file in bytes
+          example: 1024
+
+    CreateResponseDTO:
+      required:
+        - path
+        - createdAt
+      properties:
+        path:
+          $ref: "#/components/schemas/Path"
+        createdAt:
+          $ref: "#/components/schemas/CreatedAt"
+
+    GetResponseDTO:
+      oneOf:
+        - $ref: "#/components/schemas/DirectoryDTO"
+        - $ref: "#/components/schemas/FileDTO"
+
+    DirectoryDTO:
+      required:
+        - name
+        - createdAt
+      properties:
+        name:
+          $ref: "#/components/schemas/Name"
+        createdAt:
+          $ref: "#/components/schemas/CreatedAt"
+        files:
+          type: array
+          items:
+            $ref: "#/components/schemas/FileDTO"
+
+    FileDTO:
+      required:
+        - path
+        - name
+        - size
+        - createdAt
+      properties:
+        path:
+          $ref: "#/components/schemas/Path"
+        name:
+          $ref: "#/components/schemas/Name"
+        size:
+          type: integer
+          format: int32
+          description: The size of the file in bytes
+        createdAt:
+          $ref: "#/components/schemas/CreatedAt"
+
+
+    # RFC 9457 - Problem Details for HTTP APIs
+    ProblemDetails:
+      properties:
+        type:
+          type: string
+          format: uri
+          default: about:blank
+          description: A URI reference that identifies the problem type
+          example: about:blank
+        title:
+          type: string
+          description: A short, human-readable summary of the problem
+          nullable: true
+          example: "Bad Request"
+        status:
+          type: integer
+          format: int32
+          description: The HTTP status code generated by the origin server for this occurrence of the problem
+          example: 400
+        detail:
+          type: string
+          description: A human-readable explanation specific to this occurrence of the problem
+          nullable: true
+          example: "Detail about the problem"
+        instance:
+          type: string
+          format: uri
+          description: A URI reference that identifies the specific occurrence of the problem
+          nullable: true
+          example: /path/to/endpoint
+        properties:
+          additionalProperties:
+            description: Additional properties related to the problem
+          nullable: true
+          example:
+            key: value
