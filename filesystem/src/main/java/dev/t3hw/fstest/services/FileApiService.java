@@ -36,7 +36,9 @@ public class FileApiService implements FileApiDelegate {
         
         OffsetDateTime createTime = file.getCreationTime().atOffset(ZoneOffset.UTC);
 
-        return ResponseEntity.ok(new FileDTO().name(file.getName())
+        return ResponseEntity.ok(new FileDTO()
+                .path(file.getPath())
+                .name(file.getName())
                 .size(file.getSize())
                 .createdAt(createTime));
     }

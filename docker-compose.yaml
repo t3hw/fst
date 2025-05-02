@@ -1,0 +1,6 @@
+services:
+  filesystem-service:
+    image: ravidgontov/fs-test:latest
+    container_name: filesystem-service
+    ports:
+      - "4100:4100"

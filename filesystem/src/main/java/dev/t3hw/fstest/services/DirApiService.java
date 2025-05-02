@@ -24,9 +24,9 @@ public class DirApiService implements DirApiDelegate {
     public ResponseEntity<CreateResponseDTO> addDir(CreateDirectoryDTO createDirectoryDTO) {
         var dir = fileSystem.addDirectory(createDirectoryDTO.getPath(), createDirectoryDTO.getName());
 
-        String dirName = dir.getName();
+        String dirName = dir.getPath()+"/"+dir.getName();
         var createTime = dir.getCreationTime().atOffset(ZoneOffset.UTC);
-        return ResponseEntity.created(URI.create(createDirectoryDTO.getPath() + "/" + createDirectoryDTO.getName()))
+        return ResponseEntity.created(URI.create(dirName))
                 .body(new CreateResponseDTO(dirName, createTime));
 
     }

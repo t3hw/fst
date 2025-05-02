@@ -162,23 +162,6 @@
       </plugin> -->
 
       <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-        <configuration>
-          <layers>
-            <enabled>true</enabled>
-          </layers>
-          <excludes>
-            <exclude>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-            </exclude>
-          </excludes>
-          <mainClass>dev.t3hw.fstest.FsApplication</mainClass>
-        </configuration>
-      </plugin>
-      
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
         <configuration>
@@ -186,19 +169,6 @@
             <delimiter>@</delimiter>
           </delimiters>
           <useDefaultDelimiters>false</useDefaultDelimiters>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-          <configuration>
-            <excludes>
-            <exclude>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-            </exclude>
-          </excludes>
         </configuration>
       </plugin>
       <!-- <plugin>
