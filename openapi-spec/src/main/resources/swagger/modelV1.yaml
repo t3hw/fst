@@ -33,8 +33,7 @@ paths:
       description: Returns a list of all files and directories in the file system
       operationId: getFileSystem
       parameters:
-        - $ref: "#/components/parameters/path"
-        - $ref: "#/components/parameters/recursive"
+        - $ref: "#/components/parameters/pathOpt"
       responses:
         "200":
           description: A list of files and directories
@@ -65,12 +64,12 @@ paths:
         - fstest
       summary: Delete File or Directory
       description: Deletes a file or directory at the specified path
-      operationId: deleteFileSystem
+      operationId: delete
       parameters:
         - $ref: "#/components/parameters/path"
         - $ref: "#/components/parameters/recursive"
       responses:
-        "200":
+        "204":
           description: File or directory deleted successfully
         "400":
           description: Bad Request
@@ -251,6 +250,13 @@ components:
     path:
       name: path
       in: query
+      required: true
+      description: The path to the file or directory
+      schema:
+        $ref: "#/components/schemas/Path"
+    pathOpt:
+      name: pathOpt
+      in: query
       required: false
       description: The path to the file or directory
       schema:
@@ -263,14 +269,6 @@ components:
       schema:
         type: boolean
         default: true
-    force:
-      name: force
-      in: query
-      required: false
-      description: Whether to force delete the file or directory
-      schema:
-        type: boolean
-        default: false
 
   schemas:
 
@@ -345,10 +343,10 @@ components:
           $ref: "#/components/schemas/Name"
         createdAt:
           $ref: "#/components/schemas/CreatedAt"
-        files:
+        subItems:
           type: array
           items:
-            $ref: "#/components/schemas/FileDTO"
+            $ref: "#/components/schemas/GetResponseDTO"
 
     FileDTO:
       required:

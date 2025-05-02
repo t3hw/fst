@@ -1,8 +1,12 @@
 package dev.t3hw.fstest.services;
 
+import java.net.URI;
+import java.time.ZoneOffset;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import dev.t3hw.fstest.filesystem.FileSystem;
 import dev.t3hw.fstest.model.CreateDirectoryDTO;
 import dev.t3hw.fstest.model.CreateResponseDTO;
 import dev.t3hw.fstest.server.DirApiDelegate;
@@ -13,13 +17,17 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class DirApiService implements DirApiDelegate {
-
-    // private final PostsRepository postsRepo;
-    // private final PostsDTOMapper postsMapper;
+    
+    private final FileSystem fileSystem;
 
     @Override
     public ResponseEntity<CreateResponseDTO> addDir(CreateDirectoryDTO createDirectoryDTO) {
-        // TODO Auto-generated method stub
-        return DirApiDelegate.super.addDir(createDirectoryDTO);
+        var dir = fileSystem.addDirectory(createDirectoryDTO.getPath(), createDirectoryDTO.getName());
+
+        String dirName = dir.getName();
+        var createTime = dir.getCreationTime().atOffset(ZoneOffset.UTC);
+        return ResponseEntity.created(URI.create(createDirectoryDTO.getPath() + "/" + createDirectoryDTO.getName()))
+                .body(new CreateResponseDTO(dirName, createTime));
+
     }
 }

@@ -3,51 +3,59 @@ package dev.t3hw.fstest.filesystem;
 import java.time.Instant;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
 import dev.t3hw.fstest.common.avltree.AVLTreeMap;
 import dev.t3hw.fstest.common.avltree.AVLTreeMap.OverrideStrategy;
 import dev.t3hw.fstest.filesystem.exceptions.FileSystemExceptions;
+import dev.t3hw.fstest.filesystem.fsobjects.Directory;
+import dev.t3hw.fstest.filesystem.fsobjects.File;
 import jakarta.annotation.PostConstruct;
 
 @Component
 public class FileSystemImpl implements FileSystem {
     NavigableMap<String, FileSystemNode> fileSystemMap = new AVLTreeMap<>();
-    NavigableMap<Long, FileSystemNode> filesBySize = new AVLTreeMap<>(1, OverrideStrategy.ADDITIVITY);
+    NavigableMap<Integer, Set<FileSystemNode>> filesBySize = new AVLTreeMap<>(1, OverrideStrategy.ADDITIVITY);
 
     @PostConstruct
     void init() {
         // Initialize the root directory
-        Directory root = new Directory("/home", Instant.now());
+        Directory root = new Directory("/home", "home", Instant.now());
         fileSystemMap.put("/home", root);
     }
     
     @Override
-    public void addFile(String parentDirName, String fileName, long size) {
+    public File addFile(String parentDirName, String fileName, int size) {
         // find the parent directory
         FileSystemNode parentDir = fileSystemMap.get(parentDirName);
         if (parentDir == null || !(parentDir instanceof Directory)) {
-            throw new FileSystemExceptions.NotFoundException("Parent directory not found or is not a directory");
+            throw new FileSystemExceptions.FSNotFoundException("Parent directory not found or is not a directory");
         }
 
         // create the new file
-        File newFile = new File(fileName, Instant.now(), size);
+        File newFile = new File(parentDirName, fileName, Instant.now(), size);
         fileSystemMap.put(parentDirName+"/"+fileName, newFile);
-        filesBySize.put(size, newFile);
+        filesBySize.computeIfAbsent(size, k -> ConcurrentHashMap.newKeySet()).add(newFile);
+
+        return newFile;
     }
     
     @Override
-    public void addDirectory(String parentDirName, String dirName) {
+    public Directory addDirectory(String parentDirName, String dirName) {
         // find the parent directory
         FileSystemNode parentDir = fileSystemMap.get(parentDirName);
         if (parentDir == null || !(parentDir instanceof Directory)) {
-            throw new FileSystemExceptions.NotFoundException("Parent directory not found or is not a directory");
+            throw new FileSystemExceptions.FSNotFoundException("Parent directory not found or is not a directory");
         }
 
         // create the new directory
-        Directory newDir = new Directory(dirName, Instant.now());
+        Directory newDir = new Directory(parentDirName, dirName, Instant.now());
         fileSystemMap.put(parentDirName+"/"+dirName, newDir);
+
+        return newDir;
     }
 
     @Override
@@ -55,7 +63,7 @@ public class FileSystemImpl implements FileSystem {
         // Find the file in the file system
         var file = fileSystemMap.get(path);
         if (file == null || !(file instanceof File)) {
-            throw new FileSystemExceptions.NotFoundException("File not found or is not a file");
+            throw new FileSystemExceptions.FSNotFoundException("File not found or is not a file");
         }
         
         return (File) file;
@@ -66,7 +74,7 @@ public class FileSystemImpl implements FileSystem {
         // Find the directory in the file system
         var dir = fileSystemMap.get(path);
         if (dir == null || !(dir instanceof Directory)) {
-            throw new FileSystemExceptions.NotFoundException("Directory not found or is not a directory");
+            throw new FileSystemExceptions.FSNotFoundException("Directory not found or is not a directory");
         }
         
         return (Directory) dir;
@@ -77,26 +85,41 @@ public class FileSystemImpl implements FileSystem {
         // Find the file or directory in the file system
         var node = fileSystemMap.get(path);
         if (node == null) {
-            throw new FileSystemExceptions.NotFoundException("File or directory not found");
+            throw new FileSystemExceptions.FSNotFoundException("File or directory not found");
         }
 
         // If it's a directory and recursive is true, delete all its contents
-        if (node instanceof Directory && recursive) {
+        if (node instanceof Directory) {
             // Get all files and directories in the directory
             var subNodes = fileSystemMap.subMap(path, false, fileSystemMap.floorKey(path+(char)127), true);
+
+            if (!subNodes.isEmpty() && !recursive) {
+                throw new FileSystemExceptions.DirectoryNotEmptyException("Directory is empty");
+            }
             
             subNodes.forEach((k,v) -> {
                 fileSystemMap.remove(k);
                 if (v instanceof File f) {
-                    filesBySize.subMap(f.getSize(), true, f.getSize(), true).remove(f.getSize(), f);
+                    var subMap = filesBySize.subMap(f.getSize(), true, f.getSize(), true);
+                    
+                    var files = subMap.get(f.getSize());
+                    if (files != null ) {
+                        files.remove(f);
+                    }
+                    if (files == null || files.isEmpty()) {
+                        filesBySize.remove(f.getSize());
+                    }
                 }
             });
 
-        }
-
-        // If it's a directory and recursive is false, throw an exception
-        if (node instanceof Directory && !recursive) {
-            throw new FileSystemExceptions.DirectoryNotEmptyException("Directory is not empty");
+        } else if (node instanceof File file) {
+            var files = filesBySize.get(file.getSize());
+            if (files != null) {
+                files.remove(file);
+            }
+            if (files == null || files.isEmpty()) {
+                filesBySize.remove(file.getSize());
+            }
         }
 
         // Remove the file or directory from the file system
@@ -104,11 +127,11 @@ public class FileSystemImpl implements FileSystem {
     }
 
     @Override
-    public long getFileSize(String path) {
+    public  int getFileSize(String path) {
         // Find the file in the file system
         var file = fileSystemMap.get(path);
         if (file == null || !(file instanceof File)) {
-            throw new FileSystemExceptions.NotFoundException("File not found or is not a file");
+            throw new FileSystemExceptions.FSNotFoundException("File not found or is not a file");
         }
         
         return ((File) file).getSize();
@@ -118,7 +141,7 @@ public class FileSystemImpl implements FileSystem {
     public File getBiggestFile() {
         // Find the biggest file in the file system
         if (filesBySize.isEmpty()) {
-            throw new FileSystemExceptions.NotFoundException("No files found");
+            throw new FileSystemExceptions.FSNotFoundException("No files found");
         }
         
         var biggestFileEntry = filesBySize.lastEntry();
@@ -135,12 +158,12 @@ public class FileSystemImpl implements FileSystem {
     public List<FileSystemNode> getFilesInDirectory(String path) {
         // Find the directory in the file system
         var dir = fileSystemMap.get(path);
-        if (dir == null || !(dir instanceof Directory)) {
-            throw new FileSystemExceptions.NotFoundException("Directory not found or is not a directory");
+        if (dir == null) {
+            throw new FileSystemExceptions.FSNotFoundException("File Or Directory not found");
         }
 
         // Get all files in the directory
-        var filesInDir = fileSystemMap.subMap(path, true, path + "/\uFFFF", true);
+        var filesInDir = fileSystemMap.subMap(path, true, fileSystemMap.floorKey(path+(char)127), true);
         return filesInDir.values().stream().toList();
     }
 

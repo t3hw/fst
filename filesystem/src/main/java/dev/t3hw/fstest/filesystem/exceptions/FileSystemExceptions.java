@@ -2,8 +2,8 @@ package dev.t3hw.fstest.filesystem.exceptions;
 
 public class FileSystemExceptions {
 
-    public static class NotFoundException extends RuntimeException {
-        public NotFoundException(String message) {
+    public static class FSNotFoundException extends RuntimeException {
+        public FSNotFoundException(String message) {
             super(message);
         }
     }

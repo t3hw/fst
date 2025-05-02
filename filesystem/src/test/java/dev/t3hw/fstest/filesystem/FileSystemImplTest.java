@@ -14,6 +14,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import dev.t3hw.fstest.common.avltree.AVLTreeMap;
 import dev.t3hw.fstest.filesystem.exceptions.FileSystemExceptions;
 import dev.t3hw.fstest.filesystem.exceptions.FileSystemExceptions.DirectoryNotEmptyException;
+import dev.t3hw.fstest.filesystem.fsobjects.Directory;
+import dev.t3hw.fstest.filesystem.fsobjects.File;
 
 @ExtendWith(MockitoExtension.class)
 class FileSystemImplTest {
@@ -25,7 +27,7 @@ class FileSystemImplTest {
     private AVLTreeMap<String, FileSystemNode> fileSystemMap;
     
     @Mock
-    private AVLTreeMap<Long, FileSystemNode> filesBySize;
+    private AVLTreeMap<Integer, FileSystemNode> filesBySize;
     
     @BeforeEach
     void setUp() {
@@ -46,7 +48,7 @@ class FileSystemImplTest {
         // Setup
         String parentDir = "/home";
         String fileName = "test.txt";
-        long fileSize = 1024L;
+        int fileSize = 1024;
         
         // Execute
         fileSystem.addFile(parentDir, fileName, fileSize);
@@ -64,11 +66,11 @@ class FileSystemImplTest {
         // Test adding a file to non-existent directory
         String nonExistentDir = "/nonexistent";
         String fileName = "/nonexistent/test.txt";
-        long fileSize = 1024L;
+        int fileSize = 1024;
         
         // Execute and verify exception
-        FileSystemExceptions.NotFoundException exception = assertThrows(
-            FileSystemExceptions.NotFoundException.class,
+        FileSystemExceptions.FSNotFoundException exception = assertThrows(
+            FileSystemExceptions.FSNotFoundException.class,
             () -> fileSystem.addFile(nonExistentDir, fileName, fileSize)
         );
         
@@ -97,8 +99,8 @@ class FileSystemImplTest {
         String dirName = "/nonexistent/testdir";
         
         // Execute and verify exception
-        FileSystemExceptions.NotFoundException exception = assertThrows(
-            FileSystemExceptions.NotFoundException.class,
+        FileSystemExceptions.FSNotFoundException exception = assertThrows(
+            FileSystemExceptions.FSNotFoundException.class,
             () -> fileSystem.addDirectory(nonExistentDir, dirName)
         );
         
@@ -109,7 +111,7 @@ class FileSystemImplTest {
     void testGetFile() {
         // Setup
         String filePath = "test.txt";
-        long fileSize = 1024L;
+        int fileSize = 1024;
         fileSystem.addFile("/home", filePath, fileSize);
         
         // Execute
@@ -126,8 +128,8 @@ class FileSystemImplTest {
         String nonExistentFile = "/home/nonexistent.txt";
         
         // Execute and verify exception
-        FileSystemExceptions.NotFoundException exception = assertThrows(
-            FileSystemExceptions.NotFoundException.class,
+        FileSystemExceptions.FSNotFoundException exception = assertThrows(
+            FileSystemExceptions.FSNotFoundException.class,
             () -> fileSystem.getFile(nonExistentFile)
         );
         
@@ -153,8 +155,8 @@ class FileSystemImplTest {
         String nonExistentDir = "/home/nonexistent";
         
         // Execute and verify exception
-        FileSystemExceptions.NotFoundException exception = assertThrows(
-            FileSystemExceptions.NotFoundException.class,
+        FileSystemExceptions.FSNotFoundException exception = assertThrows(
+            FileSystemExceptions.FSNotFoundException.class,
             () -> fileSystem.getDirectory(nonExistentDir)
         );
         
@@ -165,7 +167,7 @@ class FileSystemImplTest {
     void testDelete_File() {
         // Setup
         String filePath = "test.txt";
-        fileSystem.addFile("/home", filePath, 1024L);
+        fileSystem.addFile("/home", filePath, 1024);
         
         // Execute
         fileSystem.delete("/home/"+filePath, false);
@@ -193,7 +195,7 @@ class FileSystemImplTest {
         String dirPath = "testdir";
         String filePath = "test.txt";
         fileSystem.addDirectory("/home", dirPath);
-        fileSystem.addFile("/home/testdir", filePath, 1024L);
+        fileSystem.addFile("/home/testdir", filePath, 1024);
         
         // Execute and verify exception
         FileSystemExceptions.DirectoryNotEmptyException exception = assertThrows(
@@ -210,7 +212,7 @@ class FileSystemImplTest {
         String dirPath = "/home/testdir";
         String filePath = "/home/testdir/test.txt";
         fileSystem.addDirectory("/home", "testdir");
-        fileSystem.addFile("/home/testdir", "test.txt", 1024L);
+        fileSystem.addFile("/home/testdir", "test.txt", 1024);
         
         // Execute
         fileSystem.delete(dirPath, true);
@@ -226,11 +228,11 @@ class FileSystemImplTest {
         String dirPath = "/home/testdir";
         String filePath = "/home/testdir/test.txt";
         fileSystem.addDirectory("/home", "testdir");
-        fileSystem.addFile("/home/testdir", "test.txt", 1024L);
+        fileSystem.addFile("/home/testdir", "test.txt", 1024);
         
         // Adding another file to the directory
         String anotherFilePath = "/home/testdir/anotherTest.txt";
-        fileSystem.addFile("/home/testdir", "anotherTest.txt", 2048L);
+        fileSystem.addFile("/home/testdir", "anotherTest.txt", 2048);
 
         // Verify both files are present before deletion
         assertNotNull(fileSystem.fileSystemMap.get(filePath));
@@ -249,7 +251,7 @@ class FileSystemImplTest {
         // Setup
         String filePath1 = "test1.txt";
         String filePath2 = "test2.txt";
-        long fileSize = 1024L;
+        int fileSize = 1024;
         fileSystem.addFile("/home", filePath1, fileSize);
         fileSystem.addFile("/home", filePath2, fileSize);
         
@@ -266,7 +268,7 @@ class FileSystemImplTest {
         // Setup
         String filePath1 = "test1.txt";
         String filePath2 = "test2.txt";
-        long fileSize = 1024L;
+        int fileSize = 1024;
         fileSystem.addFile("/home", filePath1, fileSize);
         fileSystem.addFile("/home", filePath2, fileSize);
         
@@ -281,11 +283,11 @@ class FileSystemImplTest {
     void testGetFileSize() {
         // Setup
         String filePath = "test.txt";
-        long fileSize = 2048L;
+        int fileSize = 2048;
         fileSystem.addFile("/home", filePath, fileSize);
         
         // Execute
-        long size = fileSystem.getFileSize("/home/"+filePath);
+        int size = fileSystem.getFileSize("/home/"+filePath);
         
         // Verify
         assertEquals(fileSize, size);
@@ -297,8 +299,8 @@ class FileSystemImplTest {
         String nonExistentFile = "/home/nonexistent.txt";
         
         // Execute and verify exception
-        FileSystemExceptions.NotFoundException exception = assertThrows(
-            FileSystemExceptions.NotFoundException.class,
+        FileSystemExceptions.FSNotFoundException exception = assertThrows(
+            FileSystemExceptions.FSNotFoundException.class,
             () -> fileSystem.getFileSize(nonExistentFile)
         );
         
@@ -308,16 +310,16 @@ class FileSystemImplTest {
     @Test
     void testGetBiggestFile() {
         // Setup
-        fileSystem.addFile("/home", "/home/small.txt", 512L);
-        fileSystem.addFile("/home", "/home/medium.txt", 1024L);
-        fileSystem.addFile("/home", "/home/large.txt", 2048L);
+        fileSystem.addFile("/home", "/home/small.txt", 512);
+        fileSystem.addFile("/home", "/home/medium.txt", 1024);
+        fileSystem.addFile("/home", "/home/large.txt", 2048);
         
         // Execute
         File biggestFile = fileSystem.getBiggestFile();
         
         // Verify
         assertNotNull(biggestFile);
-        assertEquals(2048L, biggestFile.getSize());
+        assertEquals(2048, biggestFile.getSize());
     }
     
     @Test
@@ -327,8 +329,8 @@ class FileSystemImplTest {
         fileSystem.init();
         
         // Execute and verify exception
-        FileSystemExceptions.NotFoundException exception = assertThrows(
-            FileSystemExceptions.NotFoundException.class,
+        FileSystemExceptions.FSNotFoundException exception = assertThrows(
+            FileSystemExceptions.FSNotFoundException.class,
             () -> fileSystem.getBiggestFile()
         );
         
@@ -339,7 +341,7 @@ class FileSystemImplTest {
     void testGetAllFileSystem() {
         // Setup
         fileSystem.addDirectory("/home", "/home/dir1");
-        fileSystem.addFile("/home", "/home/file1.txt", 1024L);
+        fileSystem.addFile("/home", "/home/file1.txt", 1024);
         
         // Execute
         List<FileSystemNode> allNodes = fileSystem.getAllFileSystem();
@@ -353,8 +355,8 @@ class FileSystemImplTest {
     void testGetFilesInDirectory() {
         // Setup
         fileSystem.addDirectory("/home", "/home/dir1");
-        fileSystem.addFile("/home", "/home/file1.txt", 1024L);
-        fileSystem.addFile("/home", "/home/file2.txt", 2048L);
+        fileSystem.addFile("/home", "/home/file1.txt", 1024);
+        fileSystem.addFile("/home", "/home/file2.txt", 2048);
         
         // Execute
         List<FileSystemNode> filesInDir = fileSystem.getFilesInDirectory("/home");
@@ -370,8 +372,8 @@ class FileSystemImplTest {
         String nonExistentDir = "/nonexistent";
         
         // Execute and verify exception
-        FileSystemExceptions.NotFoundException exception = assertThrows(
-            FileSystemExceptions.NotFoundException.class,
+        FileSystemExceptions.FSNotFoundException exception = assertThrows(
+            FileSystemExceptions.FSNotFoundException.class,
             () -> fileSystem.getFilesInDirectory(nonExistentDir)
         );
         

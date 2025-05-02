@@ -24,7 +24,7 @@
     </dependency>
     <dependency>
       <groupId>dev.t3hw.fstest</groupId>
-      <artifactId>db</artifactId>
+      <artifactId>filesystem</artifactId>
       <version>0.0.1-SNAPSHOT</version>
     </dependency>
   </dependencies>

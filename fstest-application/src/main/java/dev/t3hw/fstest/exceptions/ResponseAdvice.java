@@ -18,6 +18,9 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import dev.t3hw.fstest.common.avltree.AVLTreeMap.NodeAlreadyExistsException;
+import dev.t3hw.fstest.filesystem.exceptions.FileSystemExceptions.DirectoryNotEmptyException;
+import dev.t3hw.fstest.filesystem.exceptions.FileSystemExceptions.FSNotFoundException;
 import dev.t3hw.fstest.model.ProblemDetails;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,18 +29,29 @@ import lombok.extern.slf4j.Slf4j;
 public class ResponseAdvice extends ResponseEntityExceptionHandler {
     
     @ExceptionHandler(CustomExceptions.ParsingException.class)
-    public ResponseEntity<Object> handleParsingException(CustomExceptions.ParsingException e, WebRequest request, HttpHeaders headers) {
+    public ResponseEntity<Object> handleParsingException(Exception e, WebRequest request, HttpHeaders headers) {
         return getProblemDetailsAndLog(e, headers, HttpStatus.BAD_REQUEST, request, Level.INFO);
     }
 
-    @ExceptionHandler(CustomExceptions.NotFoundException.class)
-    public ResponseEntity<Object> handleNotFoundException(CustomExceptions.NotFoundException e, WebRequest request, HttpHeaders headers) {
-        return getProblemDetailsAndLog(e, headers, HttpStatus.NOT_FOUND, request, Level.INFO);
+    @ExceptionHandler({
+        CustomExceptions.NotFoundException.class,
+        FSNotFoundException.class
+    })
+    public ResponseEntity<Object> handleNotFoundException(Exception e, WebRequest request) {
+        return getProblemDetailsAndLog(e, null, HttpStatus.NOT_FOUND, request, Level.WARN);
+    }
+
+    @ExceptionHandler({
+        DirectoryNotEmptyException.class,
+        NodeAlreadyExistsException.class,
+    })
+    public ResponseEntity<Object> handleDirectoryNotEmptyException(Exception e, WebRequest request) {
+        return getProblemDetailsAndLog(e, null, HttpStatus.CONFLICT, request, Level.WARN);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleUncaughtException(Exception e, WebRequest request, HttpHeaders headers) {
-        return getProblemDetailsAndLog(e, headers, HttpStatus.INTERNAL_SERVER_ERROR, request, Level.ERROR);
+    public ResponseEntity<Object> handleUncaughtException(Exception e, WebRequest request) {
+        return getProblemDetailsAndLog(e, null, HttpStatus.INTERNAL_SERVER_ERROR, request, Level.ERROR);
     }
     
     @Override

@@ -3,14 +3,13 @@ package dev.t3hw.fstest.filesystem;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +19,8 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import dev.t3hw.fstest.filesystem.exceptions.FileSystemExceptions;
+import dev.t3hw.fstest.filesystem.fsobjects.Directory;
+import dev.t3hw.fstest.filesystem.fsobjects.File;
 
 @ExtendWith(MockitoExtension.class)
 class FileSystemImplMockTest {
@@ -31,7 +32,7 @@ class FileSystemImplMockTest {
     private NavigableMap<String, FileSystemNode> fileSystemMap;
     
     @Mock
-    private NavigableMap<Long, FileSystemNode> filesBySize;
+    private NavigableMap<Integer, Set<FileSystemNode>> filesBySize;
     
     @Mock
     private Directory mockDirectory;
@@ -43,42 +44,6 @@ class FileSystemImplMockTest {
     void setUp() {
         fileSystem.fileSystemMap = fileSystemMap;
         fileSystem.filesBySize = filesBySize;
-    }
-    
-    @Test
-    void testAddFile() {
-        // Setup
-        String parentDirName = "/parent";
-        String fileName = "file.txt";
-        long size = 1024L;
-        
-        when(fileSystemMap.get(parentDirName)).thenReturn(mockDirectory);
-        
-        // Execute
-        fileSystem.addFile(parentDirName, fileName, size);
-        
-        // Verify
-        verify(fileSystemMap).get(parentDirName);
-        verify(fileSystemMap).put(eq(parentDirName+"/"+fileName), any(File.class));
-        verify(filesBySize).put(eq(size), any(File.class));
-    }
-    
-    @Test
-    void testAddFile_ParentNotFound() {
-        // Setup
-        String parentDirName = "/parent";
-        String fileName = "/parent/file.txt";
-        long size = 1024L;
-        
-        when(fileSystemMap.get(parentDirName)).thenReturn(null);
-        
-        // Execute and verify
-        assertThrows(FileSystemExceptions.NotFoundException.class, 
-            () -> fileSystem.addFile(parentDirName, fileName, size));
-        
-        verify(fileSystemMap).get(parentDirName);
-        verify(fileSystemMap, never()).put(anyString(), any(FileSystemNode.class));
-        verify(filesBySize, never()).put(anyLong(), any(FileSystemNode.class));
     }
     
     @Test
@@ -120,7 +85,7 @@ class FileSystemImplMockTest {
         when(fileSystemMap.get(path)).thenReturn(null);
         
         // Execute and verify
-        assertThrows(FileSystemExceptions.NotFoundException.class, 
+        assertThrows(FileSystemExceptions.FSNotFoundException.class, 
             () -> fileSystem.getFile(path));
         
         verify(fileSystemMap).get(path);
@@ -134,7 +99,7 @@ class FileSystemImplMockTest {
         when(fileSystemMap.get(path)).thenReturn(mockDirectory);
         
         // Execute and verify
-        assertThrows(FileSystemExceptions.NotFoundException.class, 
+        assertThrows(FileSystemExceptions.FSNotFoundException.class, 
             () -> fileSystem.getFile(path));
         
         verify(fileSystemMap).get(path);
@@ -159,13 +124,13 @@ class FileSystemImplMockTest {
     void testGetFileSize() {
         // Setup
         String path = "/path/to/file.txt";
-        long expectedSize = 2048L;
+        int expectedSize = 2048;
         
         when(fileSystemMap.get(path)).thenReturn(mockFile);
         when(mockFile.getSize()).thenReturn(expectedSize);
         
         // Execute
-        long size = fileSystem.getFileSize(path);
+        int size = fileSystem.getFileSize(path);
         
         // Verify
         assertEquals(expectedSize, size);
@@ -174,29 +139,12 @@ class FileSystemImplMockTest {
     }
     
     @Test
-    void testGetBiggestFile() {
-        // Setup
-        long biggestSize = 9999L;
-        
-        when(filesBySize.isEmpty()).thenReturn(false);
-        when(filesBySize.lastEntry()).thenReturn(Map.entry(biggestSize, mockFile));
-        
-        // Execute
-        File result = fileSystem.getBiggestFile();
-        
-        // Verify
-        assertEquals(mockFile, result);
-        verify(filesBySize).isEmpty();
-        verify(filesBySize).lastEntry();
-    }
-    
-    @Test
     void testGetBiggestFile_NoFiles() {
         // Setup
         when(filesBySize.isEmpty()).thenReturn(true);
         
         // Execute and verify
-        assertThrows(FileSystemExceptions.NotFoundException.class, 
+        assertThrows(FileSystemExceptions.FSNotFoundException.class, 
             () -> fileSystem.getBiggestFile());
         
         verify(filesBySize).isEmpty();

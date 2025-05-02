@@ -1,15 +1,17 @@
 package dev.t3hw.fstest.services;
 
-import java.util.Optional;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import dev.t3hw.fstest.filesystem.FileSystem;
+import dev.t3hw.fstest.filesystem.fsobjects.File;
 import dev.t3hw.fstest.model.CreateFileDTO;
 import dev.t3hw.fstest.model.CreateResponseDTO;
 import dev.t3hw.fstest.model.FileDTO;
 import dev.t3hw.fstest.server.FileApiDelegate;
-import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,27 +20,32 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FileApiService implements FileApiDelegate {
 
-    // private final PostsRepository postsRepo;
-    // private final PostsDTOMapper postsMapper;
-
+    private final FileSystem fileSystem;
     
     @Override
     public ResponseEntity<CreateResponseDTO> addFile(CreateFileDTO createFileDTO) {
-        // TODO Auto-generated method stub
-        return FileApiDelegate.super.addFile(createFileDTO);
+        var file = fileSystem.addFile(createFileDTO.getPath(), createFileDTO.getName(), createFileDTO.getSize());
+
+        OffsetDateTime createTime = file.getCreationTime().atOffset(ZoneOffset.UTC);
+        return ResponseEntity.ok(new CreateResponseDTO(createFileDTO.getPath() + "/" + createFileDTO.getName(), createTime));
     }
 
     @Override
     public ResponseEntity<FileDTO> getBiggesttFile() {
-        // TODO Auto-generated method stub
-        return FileApiDelegate.super.getBiggesttFile();
+        var file = fileSystem.getBiggestFile();
+        
+        OffsetDateTime createTime = file.getCreationTime().atOffset(ZoneOffset.UTC);
+
+        return ResponseEntity.ok(new FileDTO().name(file.getName())
+                .size(file.getSize())
+                .createdAt(createTime));
     }
 
     @Override
-    public ResponseEntity<Integer> getFileSize(
-            Optional<@Pattern(regexp = "^([\\w\\-. ]{1,32})((/[\\w\\-. ]{1,32}))*$") String> path) {
-        // TODO Auto-generated method stub
-        return FileApiDelegate.super.getFileSize(path);
+    public ResponseEntity<Integer> getFileSize(String path) {
+        File file = fileSystem.getFile(path);
+        
+        return ResponseEntity.ok(file.getSize());
     }
 
 }
