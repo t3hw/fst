@@ -1,16 +1,26 @@
 package dev.t3hw.fstest.common.avltree;
 
 import java.util.AbstractMap;
+import java.util.AbstractSet;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.Stack;
+import java.util.function.BiConsumer;
 
-public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { //  implements NavigableMap<K,V> {
+public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<K,V> {
     private final int AVL_BALANCE_THRESHOLD;
     private final boolean ALLOW_OVERWRITE;
     private final Comparator<K> DEFAULT_COMPARATOR;
-    private final Map<String, Comparator<V>> VALUES_COMPARATORS;
+    private final List<BiConsumer<K, V>> VALUES_OPERATOR;
 
     private AVLTreeNode<K,V> root = null;
 
@@ -26,8 +36,9 @@ public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { /
      * Constructor for the AVLTreeMap
      * @param avlBalanceThreshold The balance factor to use for the tree
      */
+    @SuppressWarnings("unchecked")
     public AVLTreeMap(int avlBalanceThreshold) {
-        this(avlBalanceThreshold, null);
+        this(avlBalanceThreshold, (Comparator<K>) Comparator.naturalOrder());
     }
     /**
      * Constructor for the AVLTreeMap
@@ -44,20 +55,20 @@ public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { /
      * @param allowOverwrite Whether to allow overwriting existing keys
      */
     public AVLTreeMap(int avlBalanceThreshold, Comparator<K> comparator, boolean allowOverwrite) {
-        this(avlBalanceThreshold, comparator, allowOverwrite, null);
+        this(avlBalanceThreshold, comparator, allowOverwrite, List.of());
     }
     /**
      * Constructor for the AVLTreeMap
      * @param avlBalanceThreshold The balance factor to use for the tree
      * @param comparator The comparator to use for the keys
      * @param allowOverwrite Whether to allow overwriting existing keys
-     * @param valuesComparators The secondary comparators to use for the values
+     * @param valuesOperator The secondary comparators to use for the values
      */
-    public AVLTreeMap(int avlBalanceThreshold, Comparator<K> comparator, boolean allowOverwrite, Map<String, Comparator<V>> valuesComparators) {
+    public AVLTreeMap(int avlBalanceThreshold, Comparator<K> comparator, boolean allowOverwrite, List<BiConsumer<K, V>> valuesOperator) {
         this.AVL_BALANCE_THRESHOLD = avlBalanceThreshold;
         this.DEFAULT_COMPARATOR = comparator;
         this.ALLOW_OVERWRITE = allowOverwrite;
-        this.VALUES_COMPARATORS = valuesComparators;
+        this.VALUES_OPERATOR = valuesOperator;
     }
 
     // --- Public Map Methods ---
@@ -71,11 +82,12 @@ public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { /
      * @return the value to which the specified key is mapped, or null if none
      * @throws IllegalArgumentException if the key is null
      */
-    public V get(K key) {
+    public V get(Object key) {
         if (key == null) {
            throw new IllegalArgumentException("Key cannot be null");
        }
-       AVLTreeNode<K, V> node = find(root, key);
+       @SuppressWarnings("unchecked")
+       AVLTreeNode<K, V> node = find(root, (K) key);
        return (node == null) ? null : node.value;
    }
 
@@ -108,16 +120,19 @@ public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { /
      * @param key key whose mapping is to be removed from the map
      * @throws IllegalArgumentException if the key is null
      */
-    public void remove(K key) {
+    public V remove(Object key) {
         if (key == null) {
            throw new IllegalArgumentException("Key cannot be null");
         }
-        var result = delete(root, key);
+        @SuppressWarnings("unchecked")
+        var result = delete(root, (K) key);
 
         // If the node was found and deleted, decrement the size
         if (result != null) {
             this.size--;
         }
+
+        return result;
     }
 
     /**
@@ -126,7 +141,7 @@ public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { /
      * @return true if this map contains a mapping for the specified key
      * @throws IllegalArgumentException if the key is null
      */
-    public boolean containsKey(K key) {
+    public boolean containsKey(Object key) {
         return get(key) != null;
     } 
  
@@ -149,7 +164,7 @@ public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { /
 
     // --- Private Helper Methods ---
 
-    private record ModificationResult<K extends Comparable<K>, V>(AVLTreeNode<K,V> root, V target) {
+    private record ModificationResult<K, V>(AVLTreeNode<K,V> root, V target) {
         /**
          * Constructor for the initial node
          * @param key The key of the node
@@ -176,7 +191,7 @@ public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { /
             return new ModificationResult<>(new AVLTreeNode<>(key, value));
         }
 
-        final int compareResult = key.compareTo(node.key);
+        final int compareResult = DEFAULT_COMPARATOR.compare(key, node.key);
         
         ModificationResult <K,V> result = null;
 
@@ -244,7 +259,7 @@ public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { /
             parent = current;
             path.push(parent);
 
-            final int compareResult = key.compareTo(current.key);
+            final int compareResult = DEFAULT_COMPARATOR.compare(key, node.key);
             if (compareResult < 0) {
                 current = current.left;
                 isLeftChild.push(true);
@@ -319,7 +334,7 @@ public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { /
         AVLTreeNode<K,V> current = node;
         
         while (current != null) {
-            final int compareResult = key.compareTo(current.key);
+            final int compareResult = DEFAULT_COMPARATOR.compare(key, node.key);
             
             if (compareResult < 0) {
                 current = current.left;
@@ -342,6 +357,14 @@ public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { /
         AVLTreeNode<K, V> current = node;
         while (current.left != null) {
             current = current.left;
+        }
+        return current;
+    }
+    
+    private AVLTreeNode<K, V> findMax(AVLTreeNode<K, V> node) {
+        AVLTreeNode<K, V> current = node;
+        while (current.right != null) {
+            current = current.right;
         }
         return current;
     }
@@ -489,156 +512,728 @@ public class AVLTreeMap<K extends Comparable<K> ,V> extends AbstractMap<K,V> { /
     private void updateCurrentNode(AVLTreeNode<K, V> node) {
         updateHeight(node);
 
-        // TODO: Insert dynamic node accumulating calculations here
+        VALUES_OPERATOR.forEach(op -> {
+            op.accept(node.key, node.value);
+        });
     }
-
-    // Method overrides from the AbstractMap class
-
-    @Override
-    public Set<Entry<K, V>> entrySet() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'entrySet'");
-    }
-
-
+        
     public static class NodeAlreadyExistsException extends RuntimeException {
         public NodeAlreadyExistsException(String message) {
             super(message);
         }
     }
+
+    // Method overrides from the AbstractMap class
+
+    @Override
+    public Comparator<? super K> comparator() {
+        return DEFAULT_COMPARATOR;
+    }
+    @Override
+    public int size() {
+        return size;
+    }
+    @Override
+    public K firstKey() {
+        return findMin(root).key;
+    }
+    @Override
+    public K lastKey() {
+        return findMax(root).key;
+    }
+    @Override
+    public Entry<K, V> firstEntry() {
+        var entry = findMin(root);
+        if (entry == null) {
+            return null;
+        }
+        return new AbstractMap.SimpleEntry<>(entry.key, entry.value);
+    }
+    @Override
+    public Entry<K, V> lastEntry() {
+        var entry = findMax(root);
+        if (entry == null) {
+            return null;
+        }
+        return new AbstractMap.SimpleEntry<>(entry.key, entry.value);
+    }
+    @Override
+    public Entry<K, V> pollFirstEntry() {
+        var entry = findMin(root);
+        if (entry == null) {
+            return null;
+        }
+        var result = new AbstractMap.SimpleEntry<>(entry.key, entry.value);
+        remove(entry.key);
+        return result;
+    }
+    @Override
+    public Entry<K, V> pollLastEntry() {
+        var entry = findMax(root);
+        if (entry == null) {
+            return null;
+        }
+        var result = new AbstractMap.SimpleEntry<>(entry.key, entry.value);
+        remove(entry.key);
+        return result;
+        
+    }
+    @Override
+    public Entry<K, V> lowerEntry(K key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        
+        AVLTreeNode<K, V> result = null;
+        AVLTreeNode<K, V> current = root;
+        
+        while (current != null) {
+            int cmp = DEFAULT_COMPARATOR.compare(current.key, key);
+            
+            if (cmp < 0) {
+                // Current key is less than target key - potential candidate
+                result = current;
+                current = current.right;
+            } else {
+                // Current key is greater or equal - go left
+                current = current.left;
+            }
+        }
+        
+        return (result == null) ? null : new AbstractMap.SimpleEntry<>(result.key, result.value);
+    }
+
+    @Override
+    public K lowerKey(K key) {
+        Entry<K, V> entry = lowerEntry(key);
+        return (entry == null) ? null : entry.getKey();
+    }
+
+    @Override
+    public Entry<K, V> floorEntry(K key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        
+        AVLTreeNode<K, V> result = null;
+        AVLTreeNode<K, V> current = root;
+        
+        while (current != null) {
+            int cmp = DEFAULT_COMPARATOR.compare(current.key, key);
+            
+            if (cmp == 0) {
+                // Exact match
+                return new AbstractMap.SimpleEntry<>(current.key, current.value);
+            } else if (cmp < 0) {
+                // Current key is less than target key - potential candidate
+                result = current;
+                current = current.right;
+            } else {
+                // Current key is greater - go left
+                current = current.left;
+            }
+        }
+        
+        return (result == null) ? null : new AbstractMap.SimpleEntry<>(result.key, result.value);
+    }
+
+    @Override
+    public K floorKey(K key) {
+        Entry<K, V> entry = floorEntry(key);
+        return (entry == null) ? null : entry.getKey();
+    }
+
+    @Override
+    public Entry<K, V> ceilingEntry(K key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        
+        AVLTreeNode<K, V> result = null;
+        AVLTreeNode<K, V> current = root;
+        
+        while (current != null) {
+            int cmp = DEFAULT_COMPARATOR.compare(current.key, key);
+            
+            if (cmp == 0) {
+                // Exact match
+                return new AbstractMap.SimpleEntry<>(current.key, current.value);
+            } else if (cmp > 0) {
+                // Current key is greater than target key - potential candidate
+                result = current;
+                current = current.left;
+            } else {
+                // Current key is less - go right
+                current = current.right;
+            }
+        }
+        
+        return (result == null) ? null : new AbstractMap.SimpleEntry<>(result.key, result.value);
+    }
+
+    @Override
+    public K ceilingKey(K key) {
+        Entry<K, V> entry = ceilingEntry(key);
+        return (entry == null) ? null : entry.getKey();
+    }
+
+    @Override
+    public Entry<K, V> higherEntry(K key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        
+        AVLTreeNode<K, V> result = null;
+        AVLTreeNode<K, V> current = root;
+        
+        while (current != null) {
+            int cmp = DEFAULT_COMPARATOR.compare(current.key, key);
+            
+            if (cmp > 0) {
+                // Current key is greater than target key - potential candidate
+                result = current;
+                current = current.left;
+            } else {
+                // Current key is less or equal - go right
+                current = current.right;
+            }
+        }
+        
+        return (result == null) ? null : new AbstractMap.SimpleEntry<>(result.key, result.value);
+    }
+
+    @Override
+    public K higherKey(K key) {
+        Entry<K, V> entry = higherEntry(key);
+        return (entry == null) ? null : entry.getKey();
+    }
+
+    @Override
+    public NavigableMap<K, V> descendingMap() {
+        return new DescendingSubMap<>(this, true, null, true, true, null, true);
+    }
+
+    @Override
+    public NavigableSet<K> navigableKeySet() {
+        return new AVLTreeSet<>(this);
+    }
+
+    @Override
+    public NavigableSet<K> descendingKeySet() {
+        return descendingMap().navigableKeySet();
+    }
+
+    @Override
+    public NavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+        if (fromKey == null || toKey == null) {
+            throw new IllegalArgumentException("Range keys cannot be null");
+        }
+        if (DEFAULT_COMPARATOR.compare(fromKey, toKey) > 0) {
+            throw new IllegalArgumentException("fromKey > toKey");
+        }
+        return new SubMap<>(this, false, fromKey, fromInclusive, false, toKey, toInclusive);
+    }
+
+    @Override
+    public NavigableMap<K, V> headMap(K toKey, boolean inclusive) {
+        if (toKey == null) {
+            throw new IllegalArgumentException("Range key cannot be null");
+        }
+        return new SubMap<>(this, true, null, true, false, toKey, inclusive);
+    }
+
+    @Override
+    public NavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
+        if (fromKey == null) {
+            throw new IllegalArgumentException("Range key cannot be null");
+        }
+        return new SubMap<>(this, false, fromKey, inclusive, true, null, true);
+    }
+
+    @Override
+    public SortedMap<K, V> subMap(K fromKey, K toKey) {
+        return subMap(fromKey, true, toKey, false);
+    }
+
+    @Override
+    public SortedMap<K, V> headMap(K toKey) {
+        return headMap(toKey, false);
+    }
+
+    @Override
+    public SortedMap<K, V> tailMap(K fromKey) {
+        return tailMap(fromKey, true);
+    }
+
+    @Override
+    public Set<Entry<K, V>> entrySet() {
+        return new EntrySet();
+    }
+
+    // Inner class needed for the entry set implementation
+    private class EntrySet extends AbstractSet<Entry<K, V>> {
+        @Override
+        public Iterator<Entry<K, V>> iterator() {
+            return new EntryIterator();
+        }
+        
+        @Override
+        public int size() {
+            return AVLTreeMap.this.size();
+        }
+        
+        @Override
+        public boolean contains(Object o) {
+            if (!(o instanceof Map.Entry)) {
+                return false;
+            }
+            @SuppressWarnings("unchecked")
+            Entry<K, V> entry = (Entry<K, V>) o;
+            V value = AVLTreeMap.this.get(entry.getKey());
+            return value != null && value.equals(entry.getValue());
+        }
+        
+        @Override
+        public boolean remove(Object o) {
+            if (!(o instanceof Map.Entry)) {
+                return false;
+            }
+            @SuppressWarnings("unchecked")
+            Entry<K, V> entry = (Entry<K, V>) o;
+            return AVLTreeMap.this.remove(entry.getKey()) != null;
+        }
+        
+        @Override
+        public void clear() {
+            AVLTreeMap.this.clear();
+        }
+    }
+
+    // Iterator for the entry set
+    private class EntryIterator implements Iterator<Entry<K, V>> {
+        private Stack<AVLTreeNode<K, V>> stack = new Stack<>();
+        private AVLTreeNode<K, V> current = root;
+        
+        public EntryIterator() {
+            // Initialize to leftmost node
+            while (current != null) {
+                stack.push(current);
+                current = current.left;
+            }
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return !stack.isEmpty();
+        }
+        
+        @Override
+        public Entry<K, V> next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            
+            AVLTreeNode<K, V> node = stack.pop();
+            Entry<K, V> result = new AbstractMap.SimpleEntry<>(node.key, node.value);
+            
+            // If right child exists, push all left children of right child
+            if (node.right != null) {
+                current = node.right;
+                while (current != null) {
+                    stack.push(current);
+                    current = current.left;
+                }
+            }
+            
+            return result;
+        }
+    }
+
+    // Helper class for key set implementation
+    private static class AVLTreeSet<E> extends AbstractSet<E> implements NavigableSet<E> {
+        private final NavigableMap<E, ?> map;
+        
+        AVLTreeSet(NavigableMap<E, ?> map) {
+            this.map = map;
+        }
+        
+        @Override
+        public Iterator<E> iterator() {
+            return map.keySet().iterator();
+        }
+        
+        @Override
+        public int size() {
+            return map.size();
+        }
+        
+        @Override
+        public boolean contains(Object o) {
+            return map.containsKey(o);
+        }
+        
+        @Override
+        public boolean remove(Object o) {
+            return map.remove(o) != null;
+        }
+        
+        @Override
+        public void clear() {
+            map.clear();
+        }
+        
+        @Override
+        public Comparator<? super E> comparator() {
+            return map.comparator();
+        }
+        
+        @Override
+        public E first() {
+            return map.firstKey();
+        }
+        
+        @Override
+        public E last() {
+            return map.lastKey();
+        }
+        
+        @Override
+        public E lower(E e) {
+            return map.lowerKey(e);
+        }
+        
+        @Override
+        public E floor(E e) {
+            return map.floorKey(e);
+        }
+        
+        @Override
+        public E ceiling(E e) {
+            return map.ceilingKey(e);
+        }
+        
+        @Override
+        public E higher(E e) {
+            return map.higherKey(e);
+        }
+        
+        @Override
+        public E pollFirst() {
+            Map.Entry<E, ?> entry = map.pollFirstEntry();
+            return (entry == null) ? null : entry.getKey();
+        }
+        
+        @Override
+        public E pollLast() {
+            Map.Entry<E, ?> entry = map.pollLastEntry();
+            return (entry == null) ? null : entry.getKey();
+        }
+        
+        @Override
+        public NavigableSet<E> descendingSet() {
+            return new AVLTreeSet<>(map.descendingMap());
+        }
+        
+        @Override
+        public Iterator<E> descendingIterator() {
+            return descendingSet().iterator();
+        }
+        
+        @Override
+        public NavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+            return new AVLTreeSet<>(map.subMap(fromElement, fromInclusive, toElement, toInclusive));
+        }
+        
+        @Override
+        public NavigableSet<E> headSet(E toElement, boolean inclusive) {
+            return new AVLTreeSet<>(map.headMap(toElement, inclusive));
+        }
+        
+        @Override
+        public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
+            return new AVLTreeSet<>(map.tailMap(fromElement, inclusive));
+        }
+        
+        @Override
+        public SortedSet<E> subSet(E fromElement, E toElement) {
+            return subSet(fromElement, true, toElement, false);
+        }
+        
+        @Override
+        public SortedSet<E> headSet(E toElement) {
+            return headSet(toElement, false);
+        }
+        
+        @Override
+        public SortedSet<E> tailSet(E fromElement) {
+            return tailSet(fromElement, true);
+        }
+    }
+
+    // Abstract class for SubMap implementations
+    private abstract static class AbstractSubMap<K, V> extends AVLTreeMap<K, V> {
+        final AVLTreeMap<K, V> m;
+        
+        AbstractSubMap(AVLTreeMap<K, V> m) {
+            this.m = m;
+        }
+        
+        // Abstract methods to be implemented by subclasses
+        abstract boolean inRange(K key);
+        abstract boolean inClosedRange(K key);
+        
+        // Common SubMap methods
+        
+        @SuppressWarnings("unchecked")
+        @Override
+        public boolean containsKey(Object key) {
+            return inRange((K) key) && m.containsKey(key);
+        }
+        
+        @SuppressWarnings("unchecked")
+        @Override
+        public V get(Object key) {
+            return !inRange((K) key) ? null : m.get(key);
+        }
+        
+        @Override
+        public V put(K key, V value) {
+            if (!inRange(key)) {
+                throw new IllegalArgumentException("Key out of range");
+            }
+            return m.put(key, value);
+        }
+        
+        @Override
+        public Comparator<? super K> comparator() {
+            return m.comparator();
+        }
+    }
+
+    // Implementation for a standard SubMap
+    private static class SubMap<K, V> extends AbstractSubMap<K, V> {
+        final K from;
+        final boolean fromStart;
+        final boolean fromInclusive;
+        final K to;
+        final boolean toEnd; 
+        final boolean toInclusive;
+        
+        SubMap(AVLTreeMap<K, V> m,
+            boolean fromStart, K from, boolean fromInclusive,
+            boolean toEnd, K to, boolean toInclusive) {
+            super(m);
+            this.from = from;
+            this.fromStart = fromStart;
+            this.fromInclusive = fromInclusive;
+            this.to = to;
+            this.toEnd = toEnd;
+            this.toInclusive = toInclusive;
+        }
+        
+        boolean inRange(K key) {
+            return (fromStart || inFromRange(key)) && (toEnd || inToRange(key));
+        }
+        
+        boolean inClosedRange(K key) {
+            return (fromStart || inFromClosedRange(key)) && (toEnd || inToClosedRange(key));
+        }
+        
+        boolean inFromRange(K key) {
+            int cmp = m.comparator().compare(key, from);
+            return fromInclusive ? cmp >= 0 : cmp > 0;
+        }
+        
+        boolean inToRange(K key) {
+            int cmp = m.comparator().compare(key, to);
+            return toInclusive ? cmp <= 0 : cmp < 0;
+        }
+        
+        boolean inFromClosedRange(K key) {
+            return m.comparator().compare(key, from) >= 0;
+        }
+        
+        boolean inToClosedRange(K key) {
+            return m.comparator().compare(key, to) <= 0;
+        }
+        
+        // NavigableMap implementation methods
+        @Override
+        public Set<Entry<K, V>> entrySet() {
+            // Implementation similar to EntrySet but respecting range
+            return new SubMapEntrySet();
+        }
+        
+        @Override
+        public K firstKey() {
+            K key = fromStart ? m.firstKey() : 
+                    fromInclusive ? m.ceilingKey(from) : m.higherKey(from);
+            if (key == null || !inRange(key)) {
+                throw new NoSuchElementException();
+            }
+            return key;
+        }
+        
+        @Override
+        public K lastKey() {
+            K key = toEnd ? m.lastKey() : 
+                    toInclusive ? m.floorKey(to) : m.lowerKey(to);
+            if (key == null || !inRange(key)) {
+                throw new NoSuchElementException();
+            }
+            return key;
+        }
+        
+        // Additional SubMap methods...
+        
+        private class SubMapEntrySet extends AbstractSet<Entry<K, V>> {
+            @Override
+            public Iterator<Entry<K, V>> iterator() {
+                return new SubMapEntryIterator();
+            }
+            
+            @Override
+            public int size() {
+                int count = 0;
+                for (Iterator<Entry<K, V>> i = iterator(); i.hasNext(); i.next()) {
+                    count++;
+                }
+                return count;
+            }
+        }
+        
+        private class SubMapEntryIterator implements Iterator<Entry<K, V>> {
+            // private Entry<K, V> lastReturned = null;
+            private Entry<K, V> next;
+            
+            SubMapEntryIterator() {
+                if (fromStart) {
+                    next = m.firstEntry();
+                } else {
+                    next = fromInclusive ? m.ceilingEntry(from) : m.higherEntry(from);
+                }
+                if (next != null && !inRange(next.getKey())) {
+                    next = null;
+                }
+            }
+            
+            @Override
+            public boolean hasNext() {
+                return next != null;
+            }
+            
+            @Override
+            public Entry<K, V> next() {
+                if (next == null) {
+                    throw new NoSuchElementException();
+                }
+                Entry<K, V> e = next;
+                
+                // Find next entry
+                K key = e.getKey();
+                next = m.higherEntry(key);
+                if (next != null && !inRange(next.getKey())) {
+                    next = null;
+                }
+                
+                // lastReturned = e;
+                return e;
+            }
+        }
+    }
+
+    // Implementation for descending map view
+    private static class DescendingSubMap<K, V> extends SubMap<K, V> {
+        DescendingSubMap(AVLTreeMap<K, V> m,
+                        boolean fromStart, K from, boolean fromInclusive,
+                        boolean toEnd, K to, boolean toInclusive) {
+            super(m, fromStart, from, fromInclusive, toEnd, to, toInclusive);
+        }
+        
+        @Override
+        public Comparator<? super K> comparator() {
+            Comparator<? super K> cmp = m.comparator();
+            if (cmp == null) {
+                return Collections.reverseOrder();
+            } else {
+                return Collections.reverseOrder(cmp);
+            }
+        }
+        
+        @Override
+        public NavigableMap<K, V> descendingMap() {
+            return new SubMap<>(m, fromStart, from, fromInclusive, toEnd, to, toInclusive);
+        }
+        
+        // Override navigational methods to reverse their behavior
+        @Override
+        public Entry<K, V> lowerEntry(K key) {
+            return inRange(key) ? m.higherEntry(key) : null;
+        }
+        
+        @Override
+        public K lowerKey(K key) {
+            return inRange(key) ? m.higherKey(key) : null;
+        }
+        
+        @Override
+        public Entry<K, V> floorEntry(K key) {
+            return inRange(key) ? m.ceilingEntry(key) : null;
+        }
+        
+        @Override
+        public K floorKey(K key) {
+            return inRange(key) ? m.ceilingKey(key) : null;
+        }
+        
+        @Override
+        public Entry<K, V> ceilingEntry(K key) {
+            return inRange(key) ? m.floorEntry(key) : null;
+        }
+        
+        @Override
+        public K ceilingKey(K key) {
+            return inRange(key) ? m.floorKey(key) : null;
+        }
+        
+        @Override
+        public Entry<K, V> higherEntry(K key) {
+            return inRange(key) ? m.lowerEntry(key) : null;
+        }
+        
+        @Override
+        public K higherKey(K key) {
+            return inRange(key) ? m.lowerKey(key) : null;
+        }
+        
+        @Override
+        public K firstKey() {
+            return super.lastKey();
+        }
+        
+        @Override
+        public K lastKey() {
+            return super.firstKey();
+        }
+        
+        @Override
+        public Entry<K, V> firstEntry() {
+            return super.lastEntry();
+        }
+        
+        @Override
+        public Entry<K, V> lastEntry() {
+            return super.firstEntry();
+        }
+        
+        @Override
+        public Entry<K, V> pollFirstEntry() {
+            return super.pollLastEntry();
+        }
+        
+        @Override
+        public Entry<K, V> pollLastEntry() {
+            return super.pollFirstEntry();
+        }
+    }
 }
-
-
-//     @Override
-//     public Comparator<? super K> comparator() {
-//         return DEFAULT_COMPARATOR;
-//     }
-
-//     @Override
-//     public K firstKey() {
-//         var current = root;
-//         while (current.left != null) {
-//             current = current.left;
-//         }
-//         return current.key;
-//     }
-//     @Override
-//     public K lastKey() {
-//         var current = root;
-//         while (current.right != null) {
-//             current = current.right;
-//         }
-//         return current.key;
-//     }
-//     @Override
-//     public Set<Entry<K, V>> entrySet() {
-//         var entries = new TreeMap<K,V>();
-//         inOrderTraversal(root, entries);
-//     }
-//     @Override
-//     public Entry<K, V> lowerEntry(K key) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'lowerEntry'");
-//     }
-//     @Override
-//     public K lowerKey(K key) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'lowerKey'");
-//     }
-//     @Override
-//     public Entry<K, V> floorEntry(K key) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'floorEntry'");
-//     }
-//     @Override
-//     public K floorKey(K key) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'floorKey'");
-//     }
-//     @Override
-//     public Entry<K, V> ceilingEntry(K key) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'ceilingEntry'");
-//     }
-//     @Override
-//     public K ceilingKey(K key) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'ceilingKey'");
-//     }
-//     @Override
-//     public Entry<K, V> higherEntry(K key) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'higherEntry'");
-//     }
-//     @Override
-//     public K higherKey(K key) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'higherKey'");
-//     }
-//     @Override
-//     public Entry<K, V> firstEntry() {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'firstEntry'");
-//     }
-//     @Override
-//     public Entry<K, V> lastEntry() {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'lastEntry'");
-//     }
-//     @Override
-//     public Entry<K, V> pollFirstEntry() {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'pollFirstEntry'");
-//     }
-//     @Override
-//     public Entry<K, V> pollLastEntry() {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'pollLastEntry'");
-//     }
-//     @Override
-//     public NavigableMap<K, V> descendingMap() {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'descendingMap'");
-//     }
-//     @Override
-//     public NavigableSet<K> navigableKeySet() {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'navigableKeySet'");
-//     }
-//     @Override
-//     public NavigableSet<K> descendingKeySet() {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'descendingKeySet'");
-//     }
-//     @Override
-//     public NavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'subMap'");
-//     }
-//     @Override
-//     public NavigableMap<K, V> headMap(K toKey, boolean inclusive) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'headMap'");
-//     }
-//     @Override
-//     public NavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'tailMap'");
-//     }
-//     @Override
-//     public SortedMap<K, V> subMap(K fromKey, K toKey) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'subMap'");
-//     }
-//     @Override
-//     public SortedMap<K, V> headMap(K toKey) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'headMap'");
-//     }
-//     @Override
-//     public SortedMap<K, V> tailMap(K fromKey) {
-//         // TODO Auto-generated method stub
-//         throw new UnsupportedOperationException("Unimplemented method 'tailMap'");
-//     }
-// }
-   

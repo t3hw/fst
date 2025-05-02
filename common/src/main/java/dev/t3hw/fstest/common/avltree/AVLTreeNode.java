@@ -1,6 +1,6 @@
 package dev.t3hw.fstest.common.avltree;
 
-public class AVLTreeNode<K extends Comparable<K> ,V> {
+public class AVLTreeNode<K ,V> {
     
     public AVLTreeNode(K key, V value) {
         this.key = key;
