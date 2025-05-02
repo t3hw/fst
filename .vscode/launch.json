@@ -8,8 +8,8 @@
             "type": "java",
             "name": "Application",
             "request": "launch",
-            "mainClass": "dev.t3hw.fstest.FsTestApplication",
-            "projectName": "fstest-application",
+            "mainClass": "dev.t3hw.fstest.FsApplication",
+            "projectName": "filesystem",
             "envFile": "${workspaceFolder}/.env",
             "console": "internalConsole"
         }

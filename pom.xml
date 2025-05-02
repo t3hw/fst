@@ -23,7 +23,6 @@
 
   
   <modules>
-    <module>fstest-api</module>
     <module>common</module>
     <module>filesystem</module>
     <module>openapi-spec</module>
@@ -175,7 +174,7 @@
               <artifactId>lombok</artifactId>
             </exclude>
           </excludes>
-          <mainClass>dev.t3hw.fstest.FsTestApplication</mainClass>
+          <mainClass>dev.t3hw.fstest.FsApplication</mainClass>
         </configuration>
       </plugin>
       

@@ -1,6 +1,7 @@
-package dev.t3hw.fstest.exceptions;
+package dev.t3hw.fstest.filesystem.exceptions;
 
 import java.net.URI;
+import java.nio.file.DirectoryNotEmptyException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +20,6 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import dev.t3hw.fstest.common.avltree.AVLTreeMap.NodeAlreadyExistsException;
-import dev.t3hw.fstest.filesystem.exceptions.FileSystemExceptions.DirectoryNotEmptyException;
 import dev.t3hw.fstest.filesystem.exceptions.FileSystemExceptions.FSNotFoundException;
 import dev.t3hw.fstest.model.ProblemDetails;
 import lombok.extern.slf4j.Slf4j;
