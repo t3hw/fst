@@ -1,11 +1,14 @@
 package dev.t3hw.fstest.common.avltree;
 
 import org.junit.jupiter.api.Test;
+
+import dev.t3hw.fstest.common.avltree.AVLTreeMap.OverrideStrategy;
+
 import org.junit.jupiter.api.BeforeEach;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Map;
+import java.util.NavigableMap;
 
 class AVLTreeMapTest {
 
@@ -39,25 +42,40 @@ class AVLTreeMapTest {
     
     @Test
     void sortedByKey() {
-        Map<String, String> stringTree = new AVLTreeMap<>();
+        NavigableMap<String, String> stringTree = new AVLTreeMap<>();
+        stringTree.put("plant", "Plant");
         stringTree.put("plant/fruit/banana", "Banana");
         stringTree.put("plant/fruit/apple", "Apple");
         stringTree.put("plant/vegetable/cabbage", "Cabbage");
         stringTree.put("plant/fruit/cherry", "Cherry");
         stringTree.put("plant/vegetable/carrot", "Carrot");
+        stringTree.put("plant/fruit", "Fruit");
         stringTree.put("plant/fruit/date", "Date");
         stringTree.put("plant/vegetable/broccoli", "Broccoli");
+        stringTree.put("plant/vegetable", "Vegetable");
         stringTree.put("plant/fruit/fig", "Fig");
         stringTree.put("plant/vegetable/eggplant", "Eggplant");
+        stringTree.put("animal", "Animal");
         stringTree.put("animal/mammal/dog", "Dog");
+        stringTree.put("animal/bird", "Bird");
         stringTree.put("animal/mammal/cat", "Cat");
         stringTree.put("animal/bird/eagle", "Eagle");
+        stringTree.put("animal/mammal", "Mammal");
         stringTree.put("animal/reptile/snake", "Snake");
         stringTree.put("animal/mammal/elephant", "Elephant");
+        stringTree.put("animal/bird/sparrow", "Sparrow");
         stringTree.put("animal/bird/parrot", "Parrot");
+        stringTree.put("animal/reptile", "Reptile");
         stringTree.put("animal/reptile/lizard", "Lizard");
 
         assertEquals("Banana", stringTree.get("plant/fruit/banana"));
+
+        System.out.println();
+        System.out.println(stringTree.lowerKey("plant/fruit/apple"));
+        System.out.println(stringTree.floorKey("plant/fruit/apple"));
+
+        System.out.println();
+        System.out.println();
 
         stringTree.forEach(
             (key, value) -> {
@@ -133,7 +151,7 @@ class AVLTreeMapTest {
 
     @Test
     void testDuplicateKeyWithoutOverwrite() {
-        avlTree = new AVLTreeMap<Integer,String>(1, false); // Overwrite not allowed
+        avlTree = new AVLTreeMap<Integer,String>(1, OverrideStrategy.NONE); // Overwrite not allowed
         avlTree.put(10, "Ten");
 
         assertThrows(AVLTreeMap.NodeAlreadyExistsException.class, () -> avlTree.put(10, "Duplicate"));
@@ -141,10 +159,19 @@ class AVLTreeMapTest {
 
     @Test
     void testDuplicateKeyWithOverwrite() {
-        avlTree = new AVLTreeMap<Integer,String>(1, true); // Overwrite allowed
+        avlTree = new AVLTreeMap<Integer,String>(1, OverrideStrategy.OVERWRITE); // Overwrite allowed
         avlTree.put(10, "Ten");
         avlTree.put(10, "Updated");
 
         assertEquals("Updated", avlTree.get(10));
+    }
+
+    @Test
+    void testDuplicateKeyWithAppend() {
+        avlTree = new AVLTreeMap<Integer,String>(1, OverrideStrategy.ADDITIVITY); // Append allowed
+        avlTree.put(10, "Ten");
+        avlTree.put(10, "Updated");
+
+        assertEquals(2, avlTree.size());
     }
 }

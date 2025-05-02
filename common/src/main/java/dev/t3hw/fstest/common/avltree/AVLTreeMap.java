@@ -19,10 +19,17 @@ import java.util.Stack;
 import java.util.function.BiConsumer;
 
 public class AVLTreeMap<K ,V> implements NavigableMap<K,V> {
+
+    public enum OverrideStrategy {
+        NONE,
+        OVERWRITE,
+        ADDITIVITY
+    }
+
     @SuppressWarnings("unchecked")
     private final Comparator<K> DEFAULT_COMPARATOR = (Comparator<K>) Comparator.naturalOrder();
     private final int AVL_BALANCE_THRESHOLD;
-    private final boolean ALLOW_OVERWRITE;
+    private final OverrideStrategy OVERWRITE_STRATEGY;
     private final List<BiConsumer<K, V>> VALUES_OPERATOR;
 
     private AVLTreeNode<K,V> root = null;
@@ -40,15 +47,15 @@ public class AVLTreeMap<K ,V> implements NavigableMap<K,V> {
      * @param avlBalanceThreshold The balance factor to use for the tree
      */
     public AVLTreeMap(int avlBalanceThreshold) {
-        this(avlBalanceThreshold, false);
+        this(avlBalanceThreshold, OverrideStrategy.NONE);
     }
     /**
      * Constructor for the AVLTreeMap
      * @param avlBalanceThreshold The balance factor to use for the tree
      * @param allowOverwrite Whether to allow overwriting existing keys
      */
-    public AVLTreeMap(int avlBalanceThreshold, boolean allowOverwrite) {
-        this(avlBalanceThreshold, allowOverwrite, List.of());
+    public AVLTreeMap(int avlBalanceThreshold, OverrideStrategy overwriteStrategy) {
+        this(avlBalanceThreshold, overwriteStrategy, List.of());
     }
     /**
      * Constructor for the AVLTreeMap
@@ -56,9 +63,9 @@ public class AVLTreeMap<K ,V> implements NavigableMap<K,V> {
      * @param allowOverwrite Whether to allow overwriting existing keys
      * @param valuesOperator The secondary comparators to use for the values
      */
-    public AVLTreeMap(int avlBalanceThreshold, boolean allowOverwrite, List<BiConsumer<K, V>> valuesOperator) {
+    public AVLTreeMap(int avlBalanceThreshold, OverrideStrategy overwriteStrategy, List<BiConsumer<K, V>> valuesOperator) {
         this.AVL_BALANCE_THRESHOLD = avlBalanceThreshold;
-        this.ALLOW_OVERWRITE = allowOverwrite;
+        this.OVERWRITE_STRATEGY = overwriteStrategy;
         this.VALUES_OPERATOR = valuesOperator;
     }
 
@@ -188,23 +195,32 @@ public class AVLTreeMap<K ,V> implements NavigableMap<K,V> {
         ModificationResult <K,V> result = null;
 
         // Traverse the tree to find the correct position for the new node
-        if (compareResult != 0) {
+        if (compareResult != 0 || (compareResult == 0 && OVERWRITE_STRATEGY == OverrideStrategy.ADDITIVITY)) {
             if (compareResult < 0) {
                 result = insert(node.left, key, value);
                 node.left = result.root;
             } else if (compareResult > 0) {
                 result = insert(node.right, key, value);
                 node.right = result.root;
+            } else if (compareResult == 0) {
+                result = insert(node.left, key, value);
+                node.left = result.root;
             }
 
             target = result.target;
 
         // Node with the key already exists
         } else {
-            if (!ALLOW_OVERWRITE) {
-                throw new NodeAlreadyExistsException("Key already exists: " + key);
+            if (OVERWRITE_STRATEGY == OverrideStrategy.NONE) {
+
+                switch (OVERWRITE_STRATEGY) {
+                    case NONE:
+                        throw new NodeAlreadyExistsException("Key already exists: " + key);
+                    case OVERWRITE:
+                    default:
+                }
             }
-            
+
             // Overwrite the value
             target = node.value;
             node.value = value;
