@@ -19,24 +19,20 @@ public class Posts implements Serializable {
 
     private Long id;
     private String content;
-    private Integer votes;
 
     public Posts() {}
 
     public Posts(Posts value) {
         this.id = value.id;
         this.content = value.content;
-        this.votes = value.votes;
     }
 
     public Posts(
         Long id,
-        String content,
-        Integer votes
+        String content
     ) {
         this.id = id;
         this.content = content;
-        this.votes = votes;
     }
 
     /**
@@ -66,20 +62,6 @@ public class Posts implements Serializable {
      */
     public void setContent(String content) {
         this.content = content;
-    }
-
-    /**
-     * Getter for <code>db.posts.votes</code>.
-     */
-    public Integer getVotes() {
-        return this.votes;
-    }
-
-    /**
-     * Setter for <code>db.posts.votes</code>.
-     */
-    public void setVotes(Integer votes) {
-        this.votes = votes;
     }
 
     @Override
@@ -114,7 +96,6 @@ public class Posts implements Serializable {
 
         sb.append(id);
         sb.append(", ").append(content);
-        sb.append(", ").append(votes);
 
         sb.append(")");
         return sb.toString();

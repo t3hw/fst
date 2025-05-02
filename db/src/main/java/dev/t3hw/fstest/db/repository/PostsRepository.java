@@ -25,7 +25,6 @@ public class PostsRepository extends PostsDao {
     @Transactional
     public Posts create(Posts post) {
         PostsRecord postRecord = ctx.newRecord(POSTS, post);
-        postRecord.reset(POSTS.VOTES);
         postRecord.store();
         return postRecord.into(Posts.class);
     }
@@ -46,43 +45,4 @@ public class PostsRepository extends PostsDao {
                 .execute();
         return findById(post.getId());
     }
-
-    public enum VoteAction {
-        UPVOTE(POSTS.VOTES.plus(1)),
-        DOWNVOTE(POSTS.VOTES.minus(1));
-    
-        private final Field<Integer> action;
-        
-        VoteAction(Field<Integer> action) {
-            this.action = action;
-        }
-
-        public static VoteAction fromString(String action) {
-            return switch (action.toLowerCase()) {
-                case "upvote" -> UPVOTE;
-                case "downvote" -> DOWNVOTE;
-                default -> throw new IllegalArgumentException("Unknown action: " + action);
-            };
-        }
-    }
-
-    @Transactional
-    public Posts updateVoteCount(Posts post, VoteAction voteAction) {
-        
-        long postId = post.getId().longValue();
-
-        ctx.update(POSTS)
-                .set(POSTS.VOTES, voteAction.action)
-                .where(POSTS.ID.eq(postId))
-                .execute();
-        return findById(postId);
-    }
-
-
-    // public List<PostDTO> findAuthorsWithBooks() {
-    //     return dslContext.selectDistinct(AUTHOR.asterisk())
-    //             .from(AUTHOR)
-    //             .join(BOOK).on(AUTHOR.ID.eq(BOOK.AUTHOR_ID))
-    //             .fetchInto(PostDTO.class);
-    // }
 }

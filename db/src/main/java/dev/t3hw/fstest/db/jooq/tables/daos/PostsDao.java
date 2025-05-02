@@ -86,19 +86,4 @@ public class PostsDao extends AbstractSpringDAOImpl<PostsRecord, dev.t3hw.fstest
     public List<dev.t3hw.fstest.db.jooq.tables.pojos.Posts> fetchByContent(String... values) {
         return fetch(Posts.POSTS.CONTENT, values);
     }
-
-    /**
-     * Fetch records that have <code>votes BETWEEN lowerInclusive AND
-     * upperInclusive</code>
-     */
-    public List<dev.t3hw.fstest.db.jooq.tables.pojos.Posts> fetchRangeOfVotes(Integer lowerInclusive, Integer upperInclusive) {
-        return fetchRange(Posts.POSTS.VOTES, lowerInclusive, upperInclusive);
-    }
-
-    /**
-     * Fetch records that have <code>votes IN (values)</code>
-     */
-    public List<dev.t3hw.fstest.db.jooq.tables.pojos.Posts> fetchByVotes(Integer... values) {
-        return fetch(Posts.POSTS.VOTES, values);
-    }
 }

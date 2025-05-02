@@ -49,20 +49,6 @@ public class PostsRecord extends UpdatableRecordImpl<PostsRecord> {
         return (String) get(1);
     }
 
-    /**
-     * Setter for <code>db.posts.votes</code>.
-     */
-    public void setVotes(Integer value) {
-        set(2, value);
-    }
-
-    /**
-     * Getter for <code>db.posts.votes</code>.
-     */
-    public Integer getVotes() {
-        return (Integer) get(2);
-    }
-
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -86,12 +72,11 @@ public class PostsRecord extends UpdatableRecordImpl<PostsRecord> {
     /**
      * Create a detached, initialised PostsRecord
      */
-    public PostsRecord(Long id, String content, Integer votes) {
+    public PostsRecord(Long id, String content) {
         super(Posts.POSTS);
 
         setId(id);
         setContent(content);
-        setVotes(votes);
         resetTouchedOnNotNull();
     }
 
@@ -104,7 +89,6 @@ public class PostsRecord extends UpdatableRecordImpl<PostsRecord> {
         if (value != null) {
             setId(value.getId());
             setContent(value.getContent());
-            setVotes(value.getVotes());
             resetTouchedOnNotNull();
         }
     }

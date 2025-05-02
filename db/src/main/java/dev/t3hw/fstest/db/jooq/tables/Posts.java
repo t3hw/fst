@@ -60,11 +60,6 @@ public class Posts extends TableImpl<PostsRecord> {
      */
     public final TableField<PostsRecord, String> CONTENT = createField(DSL.name("content"), SQLDataType.VARCHAR(1000000000), this, "");
 
-    /**
-     * The column <code>db.posts.votes</code>.
-     */
-    public final TableField<PostsRecord, Integer> VOTES = createField(DSL.name("votes"), SQLDataType.INTEGER.defaultValue(DSL.field(DSL.raw("0"), SQLDataType.INTEGER)), this, "");
-
     private Posts(Name alias, Table<PostsRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

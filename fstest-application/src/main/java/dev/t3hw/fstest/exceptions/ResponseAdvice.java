@@ -28,13 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ResponseAdvice extends ResponseEntityExceptionHandler {
     
-    @ExceptionHandler(CustomExceptions.ParsingException.class)
-    public ResponseEntity<Object> handleParsingException(Exception e, WebRequest request, HttpHeaders headers) {
-        return getProblemDetailsAndLog(e, headers, HttpStatus.BAD_REQUEST, request, Level.INFO);
-    }
-
     @ExceptionHandler({
-        CustomExceptions.NotFoundException.class,
         FSNotFoundException.class
     })
     public ResponseEntity<Object> handleNotFoundException(Exception e, WebRequest request) {
