@@ -2,6 +2,8 @@ package dev.t3hw.fstest.common.avltree;
 
 import java.util.AbstractMap;
 import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -16,10 +18,11 @@ import java.util.SortedSet;
 import java.util.Stack;
 import java.util.function.BiConsumer;
 
-public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<K,V> {
+public class AVLTreeMap<K ,V> implements NavigableMap<K,V> {
+    @SuppressWarnings("unchecked")
+    private final Comparator<K> DEFAULT_COMPARATOR = (Comparator<K>) Comparator.naturalOrder();
     private final int AVL_BALANCE_THRESHOLD;
     private final boolean ALLOW_OVERWRITE;
-    private final Comparator<K> DEFAULT_COMPARATOR;
     private final List<BiConsumer<K, V>> VALUES_OPERATOR;
 
     private AVLTreeNode<K,V> root = null;
@@ -36,37 +39,25 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
      * Constructor for the AVLTreeMap
      * @param avlBalanceThreshold The balance factor to use for the tree
      */
-    @SuppressWarnings("unchecked")
     public AVLTreeMap(int avlBalanceThreshold) {
-        this(avlBalanceThreshold, (Comparator<K>) Comparator.naturalOrder());
+        this(avlBalanceThreshold, false);
     }
     /**
      * Constructor for the AVLTreeMap
      * @param avlBalanceThreshold The balance factor to use for the tree
-     * @param comparator The comparator to use for the keys
-     */
-    public AVLTreeMap(int avlBalanceThreshold, Comparator<K> comparator) {
-        this(avlBalanceThreshold, comparator, false);
-    }
-    /**
-     * Constructor for the AVLTreeMap
-     * @param avlBalanceThreshold The balance factor to use for the tree
-     * @param comparator The comparator to use for the keys
      * @param allowOverwrite Whether to allow overwriting existing keys
      */
-    public AVLTreeMap(int avlBalanceThreshold, Comparator<K> comparator, boolean allowOverwrite) {
-        this(avlBalanceThreshold, comparator, allowOverwrite, List.of());
+    public AVLTreeMap(int avlBalanceThreshold, boolean allowOverwrite) {
+        this(avlBalanceThreshold, allowOverwrite, List.of());
     }
     /**
      * Constructor for the AVLTreeMap
      * @param avlBalanceThreshold The balance factor to use for the tree
-     * @param comparator The comparator to use for the keys
      * @param allowOverwrite Whether to allow overwriting existing keys
      * @param valuesOperator The secondary comparators to use for the values
      */
-    public AVLTreeMap(int avlBalanceThreshold, Comparator<K> comparator, boolean allowOverwrite, List<BiConsumer<K, V>> valuesOperator) {
+    public AVLTreeMap(int avlBalanceThreshold, boolean allowOverwrite, List<BiConsumer<K, V>> valuesOperator) {
         this.AVL_BALANCE_THRESHOLD = avlBalanceThreshold;
-        this.DEFAULT_COMPARATOR = comparator;
         this.ALLOW_OVERWRITE = allowOverwrite;
         this.VALUES_OPERATOR = valuesOperator;
     }
@@ -191,6 +182,7 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
             return new ModificationResult<>(new AVLTreeNode<>(key, value));
         }
 
+        // final int compareResult = key.compareTo(node.key);
         final int compareResult = DEFAULT_COMPARATOR.compare(key, node.key);
         
         ModificationResult <K,V> result = null;
@@ -259,7 +251,8 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
             parent = current;
             path.push(parent);
 
-            final int compareResult = DEFAULT_COMPARATOR.compare(key, node.key);
+            // final int compareResult = key.compareTo(current.key);
+            final int compareResult = DEFAULT_COMPARATOR.compare(key, current.key);
             if (compareResult < 0) {
                 current = current.left;
                 isLeftChild.push(true);
@@ -334,7 +327,8 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         AVLTreeNode<K,V> current = node;
         
         while (current != null) {
-            final int compareResult = DEFAULT_COMPARATOR.compare(key, node.key);
+            // final int compareResult = key.compareTo(current.key);
+            final int compareResult = DEFAULT_COMPARATOR.compare(key, current.key);
             
             if (compareResult < 0) {
                 current = current.left;
@@ -524,24 +518,23 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
     }
 
     // Method overrides from the AbstractMap class
-
-    @Override
-    public Comparator<? super K> comparator() {
-        return DEFAULT_COMPARATOR;
-    }
-    @Override
     public int size() {
         return size;
     }
-    @Override
+
+    // @Override
+    // public Comparator<? super K> comparator() {
+    //     return DEFAULT_COMPARATOR;
+    // }
+    // @Override
     public K firstKey() {
         return findMin(root).key;
     }
-    @Override
+    // @Override
     public K lastKey() {
         return findMax(root).key;
     }
-    @Override
+    // @Override
     public Entry<K, V> firstEntry() {
         var entry = findMin(root);
         if (entry == null) {
@@ -549,7 +542,7 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         }
         return new AbstractMap.SimpleEntry<>(entry.key, entry.value);
     }
-    @Override
+    // @Override
     public Entry<K, V> lastEntry() {
         var entry = findMax(root);
         if (entry == null) {
@@ -557,7 +550,7 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         }
         return new AbstractMap.SimpleEntry<>(entry.key, entry.value);
     }
-    @Override
+    // @Override
     public Entry<K, V> pollFirstEntry() {
         var entry = findMin(root);
         if (entry == null) {
@@ -567,7 +560,7 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         remove(entry.key);
         return result;
     }
-    @Override
+    // @Override
     public Entry<K, V> pollLastEntry() {
         var entry = findMax(root);
         if (entry == null) {
@@ -578,7 +571,7 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         return result;
         
     }
-    @Override
+    // @Override
     public Entry<K, V> lowerEntry(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
@@ -588,7 +581,9 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         AVLTreeNode<K, V> current = root;
         
         while (current != null) {
+            // int cmp = current.key.compareTo(key);
             int cmp = DEFAULT_COMPARATOR.compare(current.key, key);
+
             
             if (cmp < 0) {
                 // Current key is less than target key - potential candidate
@@ -603,13 +598,13 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         return (result == null) ? null : new AbstractMap.SimpleEntry<>(result.key, result.value);
     }
 
-    @Override
+    // @Override
     public K lowerKey(K key) {
         Entry<K, V> entry = lowerEntry(key);
         return (entry == null) ? null : entry.getKey();
     }
 
-    @Override
+    // @Override
     public Entry<K, V> floorEntry(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
@@ -619,6 +614,7 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         AVLTreeNode<K, V> current = root;
         
         while (current != null) {
+            // int cmp = current.key.compareTo(key);
             int cmp = DEFAULT_COMPARATOR.compare(current.key, key);
             
             if (cmp == 0) {
@@ -637,13 +633,11 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         return (result == null) ? null : new AbstractMap.SimpleEntry<>(result.key, result.value);
     }
 
-    @Override
     public K floorKey(K key) {
         Entry<K, V> entry = floorEntry(key);
         return (entry == null) ? null : entry.getKey();
     }
 
-    @Override
     public Entry<K, V> ceilingEntry(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
@@ -653,6 +647,7 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         AVLTreeNode<K, V> current = root;
         
         while (current != null) {
+            // int cmp = current.key.compareTo(key);
             int cmp = DEFAULT_COMPARATOR.compare(current.key, key);
             
             if (cmp == 0) {
@@ -671,13 +666,11 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         return (result == null) ? null : new AbstractMap.SimpleEntry<>(result.key, result.value);
     }
 
-    @Override
     public K ceilingKey(K key) {
         Entry<K, V> entry = ceilingEntry(key);
         return (entry == null) ? null : entry.getKey();
     }
 
-    @Override
     public Entry<K, V> higherEntry(K key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
@@ -687,6 +680,7 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         AVLTreeNode<K, V> current = root;
         
         while (current != null) {
+            // int cmp = current.key.compareTo(key);
             int cmp = DEFAULT_COMPARATOR.compare(current.key, key);
             
             if (cmp > 0) {
@@ -702,7 +696,6 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         return (result == null) ? null : new AbstractMap.SimpleEntry<>(result.key, result.value);
     }
 
-    @Override
     public K higherKey(K key) {
         Entry<K, V> entry = higherEntry(key);
         return (entry == null) ? null : entry.getKey();
@@ -1235,5 +1228,48 @@ public class AVLTreeMap<K ,V> extends AbstractMap<K,V>  implements NavigableMap<
         public Entry<K, V> pollLastEntry() {
             return super.pollFirstEntry();
         }
+    }
+
+    @Override
+    public Set<K> keySet() {
+        var set = new AVLTreeSet<K>(this);
+        return set;
+    }
+    @Override
+    public Collection<V> values() {
+        var collection = new ArrayList<V>(size);
+        var iterator = entrySet().iterator();
+        while (iterator.hasNext()) {
+            var entry = iterator.next();
+            collection.add(entry.getValue());
+        }
+        return collection;
+    }
+    @Override
+    public boolean containsValue(Object value) {
+        var iterator = entrySet().iterator();
+        while (iterator.hasNext()) {
+            var entry = iterator.next();
+            if (entry.getValue().equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+        for (var entry : m.entrySet()) {
+            put(entry.getKey(), entry.getValue());
+        }
+    }
+    @Override
+    public void clear() {
+        root = null;
+        size = 0;
+    }
+
+    @Override
+    public Comparator<? super K> comparator() {
+        return DEFAULT_COMPARATOR;
     }
 }
