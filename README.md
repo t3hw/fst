@@ -94,7 +94,8 @@ Navigate to [http://localhost:4100/swagger-ui/index.html/](http://localhost:4100
 
 5. All of the required dependencies will be installed automatically.
 
-6. You can use `mvnd` instead of `mvn` for quicker builds, as well as the Helidon CLI for managing the project.
+6. You can use `mvnd` instead of `mvn` for quicker builds.
+
 
 ## Running and debugging
 
