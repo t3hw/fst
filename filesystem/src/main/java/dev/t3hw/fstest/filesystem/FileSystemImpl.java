@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
 import dev.t3hw.fstest.common.avltree.AVLTreeMap;
-import dev.t3hw.fstest.common.avltree.AVLTreeMap.OverrideStrategy;
 import dev.t3hw.fstest.filesystem.exceptions.FileSystemExceptions;
 import dev.t3hw.fstest.filesystem.fsobjects.Directory;
 import dev.t3hw.fstest.filesystem.fsobjects.File;
@@ -18,7 +17,7 @@ import jakarta.annotation.PostConstruct;
 @Component
 public class FileSystemImpl implements FileSystem {
     NavigableMap<String, FileSystemNode> fileSystemMap = new AVLTreeMap<>();
-    NavigableMap<Integer, Set<FileSystemNode>> filesBySize = new AVLTreeMap<>(1, OverrideStrategy.ADDITIVITY);
+    NavigableMap<Integer, Set<FileSystemNode>> filesBySize = new AVLTreeMap<>();
 
     @PostConstruct
     void init() {
@@ -93,8 +92,8 @@ public class FileSystemImpl implements FileSystem {
             // Get all files and directories in the directory
             var subNodes = fileSystemMap.subMap(path, false, fileSystemMap.floorKey(path+(char)127), true);
 
-            if (!subNodes.isEmpty() && !recursive) {
-                throw new FileSystemExceptions.DirectoryNotEmptyException("Directory is empty");
+            if (!subNodes.values().isEmpty() && !recursive) {
+                throw new FileSystemExceptions.DirectoryNotEmptyException("Directory is not empty");
             }
             
             subNodes.forEach((k,v) -> {
@@ -145,7 +144,7 @@ public class FileSystemImpl implements FileSystem {
         }
         
         var biggestFileEntry = filesBySize.lastEntry();
-        return (File) biggestFileEntry.getValue();
+        return (File) biggestFileEntry.getValue().stream().findFirst().get();
     }
 
     @Override

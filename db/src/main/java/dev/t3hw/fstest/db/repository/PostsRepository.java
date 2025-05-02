@@ -4,7 +4,6 @@ import static dev.t3hw.fstest.db.jooq.Tables.POSTS;
 
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
-import org.jooq.Field;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 

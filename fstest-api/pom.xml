@@ -9,7 +9,7 @@
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>fstest-application</artifactId>
+  <artifactId>fstest-api</artifactId>
 
   <dependencies>
     <dependency>
@@ -67,7 +67,6 @@
       </plugin>
     </plugins>
   </build>
-
 
 
 </project>

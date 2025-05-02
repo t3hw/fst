@@ -23,7 +23,6 @@ public class AVLTreeMap<K ,V> implements NavigableMap<K,V> {
     public enum OverrideStrategy {
         NONE,
         OVERWRITE,
-        ADDITIVITY
     }
 
     @SuppressWarnings("unchecked")
@@ -195,16 +194,13 @@ public class AVLTreeMap<K ,V> implements NavigableMap<K,V> {
         ModificationResult <K,V> result = null;
 
         // Traverse the tree to find the correct position for the new node
-        if (compareResult != 0 || (compareResult == 0 && OVERWRITE_STRATEGY == OverrideStrategy.ADDITIVITY)) {
+        if (compareResult != 0) {
             if (compareResult < 0) {
                 result = insert(node.left, key, value);
                 node.left = result.root;
             } else if (compareResult > 0) {
                 result = insert(node.right, key, value);
                 node.right = result.root;
-            } else if (compareResult == 0) {
-                result = insert(node.left, key, value);
-                node.left = result.root;
             }
 
             target = result.target;

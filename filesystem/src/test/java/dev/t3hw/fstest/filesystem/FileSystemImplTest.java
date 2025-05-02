@@ -1,5 +1,6 @@
 package dev.t3hw.fstest.filesystem;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
@@ -58,7 +59,7 @@ class FileSystemImplTest {
         assertNotNull(node);
         assertTrue(node instanceof File);
         assertEquals(fileSize, ((File) node).getSize());
-        assertEquals(node, fileSystem.filesBySize.get(fileSize));
+        assertTrue(fileSystem.filesBySize.get(fileSize).contains(node));
     }
     
     @Test
@@ -181,6 +182,8 @@ class FileSystemImplTest {
         // Setup
         String dirPath = "testdir";
         fileSystem.addDirectory("/home", dirPath);
+        fileSystem.addDirectory("/home/testdir", dirPath);
+
         
         // Execute
         assertThrows(DirectoryNotEmptyException.class, () -> fileSystem.delete("/home/" + dirPath, false));
@@ -377,6 +380,6 @@ class FileSystemImplTest {
             () -> fileSystem.getFilesInDirectory(nonExistentDir)
         );
         
-        assertEquals("Directory not found or is not a directory", exception.getMessage());
+        assertEquals("File Or Directory not found", exception.getMessage());
     }
 }

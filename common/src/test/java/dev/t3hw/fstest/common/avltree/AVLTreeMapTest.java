@@ -166,12 +166,4 @@ class AVLTreeMapTest {
         assertEquals("Updated", avlTree.get(10));
     }
 
-    @Test
-    void testDuplicateKeyWithAppend() {
-        avlTree = new AVLTreeMap<Integer,String>(1, OverrideStrategy.ADDITIVITY); // Append allowed
-        avlTree.put(10, "Ten");
-        avlTree.put(10, "Updated");
-
-        assertEquals(2, avlTree.size());
-    }
 }

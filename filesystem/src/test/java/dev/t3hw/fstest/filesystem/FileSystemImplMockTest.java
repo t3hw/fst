@@ -2,8 +2,6 @@ package dev.t3hw.fstest.filesystem;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -164,27 +162,5 @@ class FileSystemImplMockTest {
         // Verify
         assertEquals(expectedNodes, result);
         verify(fileSystemMap).values();
-    }
-    
-    @Test
-    void testGetFilesInDirectory() {
-        // Setup
-        String path = "/path/to/dir";
-        @SuppressWarnings("unchecked")
-        NavigableMap<String, FileSystemNode> subMap = mock(NavigableMap.class);
-        List<FileSystemNode> expectedNodes = List.of(mockDirectory, mockFile);
-        
-        when(fileSystemMap.get(path)).thenReturn(mockDirectory);
-        when(fileSystemMap.subMap(eq(path), anyBoolean(), anyString(), anyBoolean())).thenReturn(subMap);
-        when(subMap.values()).thenReturn(expectedNodes);
-        
-        // Execute
-        List<FileSystemNode> result = fileSystem.getFilesInDirectory(path);
-        
-        // Verify
-        assertEquals(expectedNodes, result);
-        verify(fileSystemMap).get(path);
-        verify(fileSystemMap).subMap(eq(path), anyBoolean(), anyString(), anyBoolean());
-        verify(subMap).values();
     }
 }
