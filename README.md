@@ -56,7 +56,7 @@ Typically, AVL tree operations like insertion and deletion are implemented recur
 
 - **`getBiggestFile()`**  
     Returns the name of the file with the maximum size.  
-    **Time Complexity**: O(1), as it is saved in a separate HashMap/AVL tree composite for indexing purposes.
+    **Time Complexity**: O(log(n)), as it is saved in a separate HashMap/AVL tree composite for indexing purposes.
 
 - **`showFileSystem()`**  
     Displays all files and directories in a hierarchical structure, including their properties.  
